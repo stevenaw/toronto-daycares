@@ -34,7 +34,7 @@ namespace TorontoDaycares
 
             var topPrograms = FindData(daycares, filter);
 
-            var exporter = new ExcelExporter("output.xlsx");
+            var exporter = new ExcelExporter("daycares.xlsx");
             exporter.Export(filter, topPrograms);
         }
 
