@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using TorontoDaycares.Exporters;
 
 namespace TorontoDaycares
 {
@@ -26,14 +27,14 @@ namespace TorontoDaycares
 
             var filter = new DaycareFilter()
             {
-                TopN = 25,
+                TopN = 50,
                 WardList = new[] { 6, 8, 11, 18, 17, 16, 15 },
-                ProgramList = new [] { ProgramType.Infant }
+                ProgramList = new [] { ProgramType.Infant, ProgramType.Toddler }
             };
 
             var topPrograms = FindData(daycares, filter);
 
-            var exporter = new ConsoleExporter();
+            var exporter = new ExcelExporter("output.xlsx");
             exporter.Export(filter, topPrograms);
         }
 

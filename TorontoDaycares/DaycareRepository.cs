@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace TorontoDaycares
@@ -58,9 +59,9 @@ namespace TorontoDaycares
             return uris;
         }
 
-        public async Task<IEnumerable<Daycare>> GetDaycares()
+        public async Task<IEnumerable<Daycare>> GetDaycares(CancellationToken cancellationToken = default(CancellationToken))
         {
-            var urls = await GetDaycareUrls();
+            var urls = await GetDaycareUrls(cancellationToken);
             var invalidUrls = await GetInvalidUrls();
 
             List<Daycare> daycares = new List<Daycare>();
@@ -80,7 +81,7 @@ namespace TorontoDaycares
                     {
                         using (var s = File.OpenRead(dataFile))
                         {
-                            daycare = await JsonSerializer.DeserializeAsync<Daycare>(s);
+                            daycare = await JsonSerializer.DeserializeAsync<Daycare>(s, cancellationToken: cancellationToken);
                         }
                     }
 
@@ -91,13 +92,13 @@ namespace TorontoDaycares
 
                         if (!File.Exists(rawFile))
                         {
-                            html = await FetchHtml(url);
-                            await File.WriteAllTextAsync(rawFile, html.ParsedText);
+                            html = await FetchHtml(url, cancellationToken);
+                            await File.WriteAllTextAsync(rawFile, html.ParsedText, cancellationToken: cancellationToken);
                         }
                         else
                         {
                             html = new HtmlDocument();
-                            html.LoadHtml(await File.ReadAllTextAsync(rawFile));
+                            html.LoadHtml(await File.ReadAllTextAsync(rawFile, cancellationToken: cancellationToken));
                         }
 
                         daycare = ParseDaycare(url, html);
@@ -105,7 +106,7 @@ namespace TorontoDaycares
                         {
                             using (var s = File.OpenWrite(dataFile))
                             {
-                                await JsonSerializer.SerializeAsync(s, daycare);
+                                await JsonSerializer.SerializeAsync(s, daycare, cancellationToken: cancellationToken);
                             }
                         }
                         else
@@ -114,7 +115,7 @@ namespace TorontoDaycares
                             {
                                 using (var writer = new StreamWriter(s))
                                 {
-                                    await writer.WriteLineAsync(url.ToString());
+                                    await writer.WriteLineAsync(url.ToString().AsMemory(), cancellationToken: cancellationToken);
                                 }
                             }
                         }
@@ -209,7 +210,7 @@ namespace TorontoDaycares
             return text.Trim();
         }
 
-        private async Task<IEnumerable<Uri>> GetDaycareUrls()
+        private async Task<IEnumerable<Uri>> GetDaycareUrls(CancellationToken cancellationToken)
         {
             var dataDir = Directory.CreateDirectory(Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory));
             var dataFile = Path.Join(dataDir.FullName, FileResources.AllUrlsFile);
@@ -221,8 +222,8 @@ namespace TorontoDaycares
 
             if (!uris.Any())
             {
-                var alphaPages = await GetAlphaUrls();
-                uris = (await FetchDaycareUrls(alphaPages)).ToArray();
+                var alphaPages = await GetAlphaUrls(cancellationToken);
+                uris = (await FetchDaycareUrls(alphaPages, cancellationToken)).ToArray();
 
                 await File.WriteAllLinesAsync(dataFile, uris.Select(u => u.ToString()));
             }
@@ -230,13 +231,13 @@ namespace TorontoDaycares
             return uris;
         }
 
-        private async Task<IEnumerable<Uri>> FetchDaycareUrls(IEnumerable<Uri> pageUrls)
+        private async Task<IEnumerable<Uri>> FetchDaycareUrls(IEnumerable<Uri> pageUrls, CancellationToken cancellationToken)
         {
             List<Uri> daycareUrls = new List<Uri>();
 
             foreach (var url in pageUrls)
             {
-                var page = await FetchHtml(url);
+                var page = await FetchHtml(url, cancellationToken);
 
                 var anchors = page.QuerySelectorAll("div.pfrPrdListing tbody tr td:first-child a");
                 var urls = anchors.Select(a => new Uri(url, a.Attributes["href"].Value));
@@ -247,10 +248,10 @@ namespace TorontoDaycares
             return daycareUrls;
         }
 
-        private async Task<IEnumerable<Uri>> GetAlphaUrls()
+        private async Task<IEnumerable<Uri>> GetAlphaUrls(CancellationToken cancellationToken)
         {
             var startUrl = new Uri("https://www.toronto.ca/data/children/dmc/a2z/a2za.html");
-            var page = await FetchHtml(startUrl);
+            var page = await FetchHtml(startUrl, cancellationToken);
 
             var anchors = page.QuerySelectorAll("#pfrNavAlpha2 li a");
             return anchors.Select(a =>
@@ -260,9 +261,9 @@ namespace TorontoDaycares
             }).ToArray();
         }
 
-        private async Task<HtmlDocument> FetchHtml(Uri url)
+        private async Task<HtmlDocument> FetchHtml(Uri url, CancellationToken cancellationToken)
         {
-            var response = await client.GetAsync(url);
+            var response = await client.GetAsync(url, cancellationToken);
             var html = await response.Content.ReadAsStringAsync();
 
             var page = new HtmlDocument();
