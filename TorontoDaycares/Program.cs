@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -30,16 +31,20 @@ namespace TorontoDaycares
                 ProgramList = new [] { ProgramType.Infant }
             };
 
+            var topPrograms = FindData(daycares, filter);
+
+            var exporter = new ConsoleExporter();
+            exporter.Export(filter, topPrograms);
+        }
+
+        private static Dictionary<ProgramType, List<(Daycare Daycare, DaycareProgram Program)>> FindData(IEnumerable<Daycare> daycares, DaycareFilter filter)
+        {
             var allPrograms = daycares
                 .SelectMany(o =>
                 {
                     var result = o.Programs
                         .Where(o2 => o2.Rating.HasValue)
-                        .Select(p => new
-                        {
-                            Daycare = o,
-                            Program = p
-                        });
+                        .Select(p => (Daycare: o, Program: p));
 
                     if (filter.WardList.Any())
                         result = result.Where(o2 => filter.WardList.Contains(o2.Daycare.WardNumber));
@@ -67,18 +72,7 @@ namespace TorontoDaycares
                     }
                 );
 
-            foreach(var programType in topPrograms)
-            {
-                var title = $"Top {filter.TopN.Value} {programType.Key} programs:";
-                Console.WriteLine(title);
-                Console.WriteLine(new string('-', title.Length));
-
-                foreach(var item in programType.Value)
-                {
-                    Console.WriteLine($"- {item.Program.Rating.Value}/5 - {item.Daycare.Name} - {item.Daycare.Address}");
-                }
-                Console.WriteLine();
-            }
+            return topPrograms;
         }
     }
 }
