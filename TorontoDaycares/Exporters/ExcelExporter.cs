@@ -21,6 +21,7 @@ namespace TorontoDaycares.Exporters
                 {
                     var worksheet = package.Workbook.Worksheets.Add(programType.Key.ToString());
 
+                    worksheet.Row(1).Style.Font.Bold = true;
                     worksheet.Cells[1, 1].Value = "Name";
                     worksheet.Cells[1, 2].Value = "Rating";
                     worksheet.Cells[1, 3].Value = "Capacity";
@@ -36,7 +37,7 @@ namespace TorontoDaycares.Exporters
                         worksheet.Cells[row, 3].Value = item.Program.Capacity;
                         worksheet.Cells[row, 4].Value = item.Program.Vacancy;
                         worksheet.Cells[row, 5].Value = item.Daycare.Address;
-                        worksheet.Cells[row, 6].Value = item.Daycare.Uri;
+                        worksheet.Cells[row, 6].Hyperlink = item.Daycare.Uri;
                         row++;
                     }
 
