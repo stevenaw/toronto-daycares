@@ -181,11 +181,16 @@ namespace TorontoDaycares
                 var capacity = GetCellContents(cells[1]);
                 var vacancy = GetCellContents(cells[2]);
                 var quality = GetCellContents(cells[3]);
-
+                
                 var program = new DaycareProgram()
                 {
                     Capacity = Int32.Parse(capacity),
-                    Vacancy = vacancy.ToLower() == "yes",
+                    Vacancy = vacancy.ToLower() switch
+                    {
+                        "yes" => true,
+                        "no" => false,
+                        _ => (bool?)null
+                    },
                     Rating = InvalidRating(quality) ? null : (double?)Double.Parse(quality)
                 };
 
