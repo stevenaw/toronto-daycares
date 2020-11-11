@@ -27,6 +27,7 @@ namespace TorontoDaycares
     {
         Infant,
         Toddler,
-        Preschool
+        Preschool,
+        Kindergarten
     }
 }

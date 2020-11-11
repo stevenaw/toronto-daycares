@@ -194,7 +194,7 @@ namespace TorontoDaycares
                     Rating = InvalidRating(quality) ? null : (double?)Double.Parse(quality)
                 };
 
-                if (Enum.TryParse(type, out ProgramType programType))
+                if (Enum.TryParse<ProgramType>(type, out var programType))
                 {
                     program.ProgramType = programType;
                     daycare.Programs.Add(program);
