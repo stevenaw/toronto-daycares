@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CommandLine;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -9,6 +10,8 @@ namespace TorontoDaycares
 {
     class Program
     {
+        const int MaxConnections = 5;
+
         static HttpClient GetHttpClient(int maxConnections)
         {
             return HttpClientFactory.Create(new HttpClientHandler()
@@ -19,26 +22,35 @@ namespace TorontoDaycares
 
         static async Task Main(string[] args)
         {
-            const int maxConnections = 5;
-            var client = GetHttpClient(maxConnections);
+            var result = Parser.Default.ParseArguments<Options>(args);
 
-            var repo = new DaycareRepository(client);
-            var daycares = await repo.GetDaycares();
-
-            var filter = new DaycareFilter()
+            await result.WithParsedAsync(async options =>
             {
-                TopN = 50,
-                WardList = new[] { 6, 8, 11, 18, 17, 16, 15 },
-                ProgramList = new [] { ProgramType.Infant, ProgramType.Toddler }
-            };
+                var client = GetHttpClient(MaxConnections);
 
-            var topPrograms = FindData(daycares, filter);
+                var repo = new DaycareRepository(client);
+                var daycares = await repo.GetDaycares();
 
-            var exporter = new ExcelExporter("daycares.xlsx");
-            exporter.Export(filter, topPrograms);
+                if (!options.WardList.Any())
+                    options.WardList = new[] { 6, 8, 11, 18, 17, 16, 15 };
+                if (!options.ProgramList.Any())
+                    options.ProgramList = new[] { ProgramType.Infant, ProgramType.Toddler };
+
+                var topPrograms = FindData(daycares, options);
+
+                var exporter = GetExporter(options);
+                exporter.Export(options, topPrograms);
+            });
         }
 
-        private static Dictionary<ProgramType, List<(Daycare Daycare, DaycareProgram Program)>> FindData(IEnumerable<Daycare> daycares, DaycareFilter filter)
+        private static IExporter GetExporter(Options options)
+        {
+            if (!string.IsNullOrEmpty(options.OutputFile))
+                return new ExcelExporter(options.OutputFile);
+            return new ConsoleExporter();
+        }
+
+        private static Dictionary<ProgramType, List<(Daycare Daycare, DaycareProgram Program)>> FindData(IEnumerable<Daycare> daycares, Options filter)
         {
             var allPrograms = daycares
                 .SelectMany(o =>

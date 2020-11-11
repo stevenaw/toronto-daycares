@@ -6,6 +6,6 @@ namespace TorontoDaycares.Exporters
 {
     public interface IExporter
     {
-        void Export(DaycareFilter filter, Dictionary<ProgramType, List<(Daycare Daycare, DaycareProgram Program)>> items);
+        void Export(Options filter, Dictionary<ProgramType, List<(Daycare Daycare, DaycareProgram Program)>> items);
     }
 }

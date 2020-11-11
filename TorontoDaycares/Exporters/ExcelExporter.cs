@@ -8,12 +8,17 @@ namespace TorontoDaycares.Exporters
     {
         private string FileName { get; set; }
 
+        static ExcelExporter()
+        {
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+        }
+
         public ExcelExporter(string fileName)
         {
             FileName = fileName;
         }
 
-        public void Export(DaycareFilter filter, Dictionary<ProgramType, List<(Daycare Daycare, DaycareProgram Program)>> items)
+        public void Export(Options filter, Dictionary<ProgramType, List<(Daycare Daycare, DaycareProgram Program)>> items)
         {
             using (var package = new ExcelPackage())
             {
