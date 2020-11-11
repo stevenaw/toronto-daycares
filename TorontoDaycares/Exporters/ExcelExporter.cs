@@ -1,6 +1,7 @@
 ﻿using OfficeOpenXml;
 using System.Collections.Generic;
 using System.IO;
+using TorontoDaycares.Models;
 
 namespace TorontoDaycares.Exporters
 {

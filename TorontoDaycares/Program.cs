@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using TorontoDaycares.Exporters;
+using TorontoDaycares.Models;
 
 namespace TorontoDaycares
 {
