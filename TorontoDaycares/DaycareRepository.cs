@@ -1,4 +1,5 @@
 ﻿using HtmlAgilityPack;
+using HtmlAgilityPack.CssSelectors.NetCore;
 using System;
 using System.Collections.Generic;
 using System.IO;

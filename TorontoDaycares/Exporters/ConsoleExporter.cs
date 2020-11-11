@@ -16,7 +16,7 @@ namespace TorontoDaycares.Exporters
 
                 foreach (var item in programType.Value)
                 {
-                    Console.WriteLine($"- {item.Program.Rating.Value}/5 - {item.Daycare.Name} - {item.Daycare.Address}");
+                    Console.WriteLine($"{item.Program.Rating.Value,5:0.00} / 5 - {item.Daycare.Name} - {item.Daycare.Address}");
                 }
                 Console.WriteLine();
             }
