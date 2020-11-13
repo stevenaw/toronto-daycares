@@ -32,11 +32,6 @@ namespace TorontoDaycares
                 var repo = new DaycareRepository(client);
                 var daycares = await repo.GetDaycares();
 
-                if (!options.WardList.Any())
-                    options.WardList = new[] { 6, 8, 11, 18, 17, 16, 15 };
-                if (!options.ProgramList.Any())
-                    options.ProgramList = new[] { ProgramType.Infant, ProgramType.Toddler };
-
                 var topPrograms = FindData(daycares, options);
 
                 var exporter = GetExporter(options);

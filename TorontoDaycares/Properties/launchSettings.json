@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "TorontoDaycares": {
+      "commandName": "Project",
+      "commandLineArgs": "-n 75 --wards 6,8,11,18,17,16,15 --programs Infant,Toddler"
+    }
+  }
+}
