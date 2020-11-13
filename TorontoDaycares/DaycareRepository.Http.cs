@@ -26,7 +26,7 @@ namespace TorontoDaycares
                 var alphaPages = await GetAlphaUrls(cancellationToken);
                 uris = (await FetchDaycareUrls(alphaPages, cancellationToken)).ToArray();
 
-                await File.WriteAllLinesAsync(dataFile, uris.Select(u => u.ToString()));
+                await File.WriteAllLinesAsync(dataFile, uris.Select(u => u.ToString()), cancellationToken);
             }
 
             return uris;
@@ -65,7 +65,7 @@ namespace TorontoDaycares
         private async Task<HtmlDocument> FetchHtml(Uri url, CancellationToken cancellationToken)
         {
             var response = await client.GetAsync(url, cancellationToken);
-            var html = await response.Content.ReadAsStringAsync();
+            var html = await response.Content.ReadAsStringAsync(cancellationToken);
 
             var page = new HtmlDocument();
             page.LoadHtml(html);
