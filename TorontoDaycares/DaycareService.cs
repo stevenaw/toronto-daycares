@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,23 +11,15 @@ using TorontoDaycares.Models;
 
 namespace TorontoDaycares
 {
-    public partial class DaycareRepository
+    public class DaycareService
     {
-        private readonly HttpClient client;
+        private GpsRepository GpsRepo { get; }
+        private HttpDaycareRepository HttpRepo { get; }
 
-        private static class FileResources
+        public DaycareService(HttpDaycareRepository httpRepo, GpsRepository gpsRepo)
         {
-            public const string DataDirectory = "data";
-            public const string RawDataDirectory = "raw";
-            public const string ParsedDataDirectory = "parsed";
-
-            public const string AllUrlsFile = "urls.txt";
-            public const string InvalidUrlsFile = "invalid.txt";
-        }
-
-        public DaycareRepository(HttpClient client)
-        {
-            this.client = client;
+            HttpRepo = httpRepo;
+            GpsRepo = gpsRepo;
         }
 
         private static bool InvalidRating(string rating)
@@ -61,9 +52,9 @@ namespace TorontoDaycares
             return uris;
         }
 
-        public async Task<IEnumerable<Daycare>> GetDaycares(CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<IEnumerable<Daycare>> GetDaycares(CancellationToken cancellationToken = default)
         {
-            var urls = await GetDaycareUrls(cancellationToken);
+            var urls = await HttpRepo.GetDaycareUrls(cancellationToken);
             var invalidUrls = await GetInvalidUrls();
 
             var daycares = new List<Daycare>();
@@ -94,7 +85,7 @@ namespace TorontoDaycares
 
                         if (!File.Exists(rawFile))
                         {
-                            html = await FetchHtml(url, cancellationToken);
+                            html = await HttpRepo.FetchHtml(url, cancellationToken);
                             await File.WriteAllTextAsync(rawFile, html.ParsedText, cancellationToken: cancellationToken);
                         }
                         else
@@ -106,6 +97,9 @@ namespace TorontoDaycares
                         daycare = ParseDaycare(url, html);
                         if (daycare.Programs.Any())
                         {
+                            var coords = await GpsRepo.GetCoordinates(daycare.Address);
+                            daycare.GpsCoordinates = coords;
+
                             using (var s = File.OpenWrite(dataFile))
                             {
                                 await JsonSerializer.SerializeAsync(s, daycare, cancellationToken: cancellationToken);
@@ -154,11 +148,23 @@ namespace TorontoDaycares
 
             // Get address
             var addressBox = topInfoBox.QuerySelector("header p");
-            daycare.Address = addressBox.GetDirectInnerText()
+            var addressSpan = addressBox.GetDirectInnerText()
                 .Replace('\n', ' ')
                 .Replace('\t', ' ')
                 .Replace("&nbsp;", " ")
+                .AsSpan()
                 .Trim();
+
+            int closeParenthesisIdx, openParenthesisIdx;
+            if ((closeParenthesisIdx = addressSpan.LastIndexOf(')')) == -1)
+                daycare.Address = addressSpan.ToString();
+            else if ((openParenthesisIdx = addressSpan.Slice(0, closeParenthesisIdx).LastIndexOf('(')) == -1)
+                daycare.Address = addressSpan.ToString();
+            else
+            {
+                daycare.Address = addressSpan.Slice(0, openParenthesisIdx).Trim().ToString();
+                daycare.NearestIntersection = addressSpan.Slice(openParenthesisIdx + 1, closeParenthesisIdx - openParenthesisIdx - 1).Trim().ToString();
+            }
 
             var wardContainer = addressBox.QuerySelector(".ward-link");
             var wardNumber = wardContainer.InnerText
@@ -217,6 +223,4 @@ namespace TorontoDaycares
             return text.Trim();
         }
     }
-
-    
 }

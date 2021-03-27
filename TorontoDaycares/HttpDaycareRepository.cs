@@ -4,14 +4,22 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace TorontoDaycares
 {
-    public partial class DaycareRepository
+    public class HttpDaycareRepository
     {
-        private async Task<IEnumerable<Uri>> GetDaycareUrls(CancellationToken cancellationToken)
+        private readonly HttpClient client;
+
+        public HttpDaycareRepository(HttpClient client)
+        {
+            this.client = client;
+        }
+
+        public async Task<IEnumerable<Uri>> GetDaycareUrls(CancellationToken cancellationToken)
         {
             var dataDir = Directory.CreateDirectory(Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory));
             var dataFile = Path.Join(dataDir.FullName, FileResources.AllUrlsFile);
@@ -62,7 +70,7 @@ namespace TorontoDaycares
             }).ToArray();
         }
 
-        private async Task<HtmlDocument> FetchHtml(Uri url, CancellationToken cancellationToken)
+        public async Task<HtmlDocument> FetchHtml(Uri url, CancellationToken cancellationToken)
         {
             var response = await client.GetAsync(url, cancellationToken);
             var html = await response.Content.ReadAsStringAsync(cancellationToken);

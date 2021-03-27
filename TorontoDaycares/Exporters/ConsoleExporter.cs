@@ -16,8 +16,12 @@ namespace TorontoDaycares.Exporters
 
                 foreach (var item in programType.Value)
                 {
-                    Console.WriteLine($"{item.Program.Rating.Value,5:0.00} / 5 - {item.Daycare.Name} - {item.Daycare.Address}");
+                    Console.Write($"{item.Program.Rating.Value,5:0.00} / 5 - {item.Daycare.Name} - {item.Daycare.Address}");
+                    if (!string.IsNullOrEmpty(item.Daycare.NearestIntersection))
+                        Console.Write($" ({item.Daycare.NearestIntersection})");
+                    Console.WriteLine();
                 }
+
                 Console.WriteLine();
             }
         }
