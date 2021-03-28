@@ -22,6 +22,9 @@ namespace TorontoDaycares
         public async Task<Coordinates> GetCoordinates(string address, CancellationToken cancellationToken = default)
         {
             // TODO: Thread-safety ??
+            // TODO: Cache of previously-fetched addresses
+            // //  - Single json file mapping address to coords
+            // //  - Mirrored in memory as a Dictionary<string, Coordinates>
 
             var now = DateTime.Now;
             var elapsedSinceLastCall = now - lastCall;

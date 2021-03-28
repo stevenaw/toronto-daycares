@@ -29,7 +29,7 @@ namespace TorontoDaycares
             {
                 var client = GetHttpClient(MaxConnections);
 
-                var repo = new DaycareService(new HttpDaycareRepository(client), new GpsRepository(client));
+                var repo = new DaycareService(new DaycareRepository(client), new GpsRepository(client));
                 var daycares = await repo.GetDaycares();
 
                 var topPrograms = FindData(daycares, options);

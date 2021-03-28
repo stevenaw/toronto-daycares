@@ -1,6 +1,4 @@
-﻿using HtmlAgilityPack;
-using HtmlAgilityPack.CssSelectors.NetCore;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -14,17 +12,12 @@ namespace TorontoDaycares
     public class DaycareService
     {
         private GpsRepository GpsRepo { get; }
-        private HttpDaycareRepository HttpRepo { get; }
+        private DaycareRepository DaycareRepo { get; }
 
-        public DaycareService(HttpDaycareRepository httpRepo, GpsRepository gpsRepo)
+        public DaycareService(DaycareRepository daycareRepo, GpsRepository gpsRepo)
         {
-            HttpRepo = httpRepo;
+            DaycareRepo = daycareRepo;
             GpsRepo = gpsRepo;
-        }
-
-        private static bool InvalidRating(string rating)
-        {
-            return rating == "-" || rating == "Not yet available";
         }
 
         private async Task<IEnumerable<Uri>> GetInvalidUrls()
@@ -54,12 +47,11 @@ namespace TorontoDaycares
 
         public async Task<IEnumerable<Daycare>> GetDaycares(CancellationToken cancellationToken = default)
         {
-            var urls = await HttpRepo.GetDaycareUrls(cancellationToken);
+            var urls = await DaycareRepo.GetDaycareUrls(cancellationToken);
             var invalidUrls = await GetInvalidUrls();
 
             var daycares = new List<Daycare>();
             var parsedDir = Directory.CreateDirectory(Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory, FileResources.ParsedDataDirectory));
-            var rawDir = Directory.CreateDirectory(Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory, FileResources.RawDataDirectory));
             var invalidFile = Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory, FileResources.InvalidUrlsFile);
 
             foreach (var url in urls.Except(invalidUrls))
@@ -80,25 +72,12 @@ namespace TorontoDaycares
 
                     if (daycare == null)
                     {
-                        HtmlDocument html = null;
-                        var rawFile = Path.Join(rawDir.FullName, fileNameBase + ".html");
+                        daycare = await DaycareRepo.GetDaycare(url, fileNameBase, cancellationToken);
 
-                        if (!File.Exists(rawFile))
-                        {
-                            html = await HttpRepo.FetchHtml(url, cancellationToken);
-                            await File.WriteAllTextAsync(rawFile, html.ParsedText, cancellationToken: cancellationToken);
-                        }
-                        else
-                        {
-                            html = new HtmlDocument();
-                            html.LoadHtml(await File.ReadAllTextAsync(rawFile, cancellationToken: cancellationToken));
-                        }
-
-                        daycare = ParseDaycare(url, html);
                         if (daycare.Programs.Any())
                         {
-                            var coords = await GpsRepo.GetCoordinates(daycare.Address);
-                            daycare.GpsCoordinates = coords;
+                            if (daycare.GpsCoordinates == null)
+                                daycare.GpsCoordinates = await GpsRepo.GetCoordinates(daycare.Address, cancellationToken);
 
                             using (var s = File.OpenWrite(dataFile))
                             {
@@ -126,101 +105,6 @@ namespace TorontoDaycares
             }
 
             return daycares;
-        }
-
-        private static Daycare ParseDaycare(Uri uri, HtmlDocument page)
-        {
-            var daycare = new Daycare();
-
-            // Get name of the daycare
-            var name = page.QuerySelector("h1").InnerText;
-
-            var infoBoxes = page.QuerySelectorAll(".csd_opcrit_content_box").ToArray();
-
-            var topInfoBox = infoBoxes[0];
-
-            // Get ID of the daycare
-            var header = topInfoBox.QuerySelector("h2").InnerText.AsSpan();
-            var idText = header.Slice(name.Length + 2).Trim(')');
-
-            daycare.Id = Int32.Parse(idText);
-            daycare.Name = name;
-
-            // Get address
-            var addressBox = topInfoBox.QuerySelector("header p");
-            var addressSpan = addressBox.GetDirectInnerText()
-                .Replace('\n', ' ')
-                .Replace('\t', ' ')
-                .Replace("&nbsp;", " ")
-                .AsSpan()
-                .Trim();
-
-            int closeParenthesisIdx, openParenthesisIdx;
-            if ((closeParenthesisIdx = addressSpan.LastIndexOf(')')) == -1)
-                daycare.Address = addressSpan.ToString();
-            else if ((openParenthesisIdx = addressSpan.Slice(0, closeParenthesisIdx).LastIndexOf('(')) == -1)
-                daycare.Address = addressSpan.ToString();
-            else
-            {
-                daycare.Address = addressSpan.Slice(0, openParenthesisIdx).Trim().ToString();
-                daycare.NearestIntersection = addressSpan.Slice(openParenthesisIdx + 1, closeParenthesisIdx - openParenthesisIdx - 1).Trim().ToString();
-            }
-
-            var wardContainer = addressBox.QuerySelector(".ward-link");
-            var wardNumber = wardContainer.InnerText
-                .AsSpan()
-                .Slice("Ward:".Length + 1)
-                .Trim();
-            daycare.WardNumber = int.Parse(wardNumber);
-
-            daycare.Uri = uri;
-
-            var programBox = infoBoxes[1];
-            daycare.Programs = new List<DaycareProgram>();
-
-            var programTable = programBox.QuerySelector("table");
-            var programRows = programTable == null ? Array.Empty<HtmlNode>() : programTable.QuerySelectorAll("tbody tr");
-
-            foreach (var row in programRows)
-            {
-                var cells = row.QuerySelectorAll("td");
-
-                var type = GetCellContents(cells[0]);
-                var capacity = GetCellContents(cells[1]);
-                var vacancy = GetCellContents(cells[2]);
-                var quality = GetCellContents(cells[3]);
-                
-                var program = new DaycareProgram()
-                {
-                    Capacity = Int32.Parse(capacity),
-                    Vacancy = vacancy.ToLower() switch
-                    {
-                        "yes" => true,
-                        "no" => false,
-                        _ => (bool?)null
-                    },
-                    Rating = InvalidRating(quality) ? null : (double?)Double.Parse(quality)
-                };
-
-                if (Enum.TryParse<ProgramType>(type, out var programType))
-                {
-                    program.ProgramType = programType;
-                    daycare.Programs.Add(program);
-                }
-                else
-                {
-                    Console.WriteLine($"Unknown program type: {type}");
-                }
-            }
-
-            return daycare;
-        }
-
-        private static string GetCellContents(HtmlNode node)
-        {
-            var link = node.QuerySelector("a");
-            var text = link == null ? node.InnerText : link.InnerText;
-            return text.Trim();
         }
     }
 }
