@@ -12,6 +12,11 @@ namespace TorontoDaycares
         [Option('w', "wards", Required = false, Separator = ',')]
         public IEnumerable<int> WardList { get; set; }
 
+        [Option('a', "address", Required = false)]
+        public string Address { get; set; }
+        public Coordinates AddressCoordinates { get; set; }
+
+
         [Option('p', "programs", Required = false, Separator = ',')]
         public IEnumerable<ProgramType> ProgramList { get; set; }
 

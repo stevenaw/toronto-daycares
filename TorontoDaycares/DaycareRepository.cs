@@ -133,6 +133,7 @@ namespace TorontoDaycares
                     .AsSpan()
                     .Trim();
 
+                // Checks to trim off intersection (if present)
                 int closeParenthesisIdx, openParenthesisIdx;
                 if ((closeParenthesisIdx = addressSpan.LastIndexOf(')')) == -1)
                     daycare.Address = addressSpan.ToString();
@@ -171,12 +172,7 @@ namespace TorontoDaycares
                     var program = new DaycareProgram()
                     {
                         Capacity = int.Parse(capacity),
-                        Vacancy = vacancy.ToLower() switch // TODO: avoid allocation
-                        {
-                            "yes" => true,
-                            "no" => false,
-                            _ => (bool?)null
-                        },
+                        Vacancy = ConvertVacancy(vacancy),
                         Rating = InvalidRating(quality) ? null : double.Parse(quality)
                     };
 
@@ -199,6 +195,15 @@ namespace TorontoDaycares
                 var link = node.QuerySelector("a");
                 var text = link == null ? node.InnerText : link.InnerText;
                 return text.Trim();
+            }
+
+            private static bool? ConvertVacancy(string s)
+            {
+                if (string.Equals(s, "yes", StringComparison.OrdinalIgnoreCase))
+                    return true;
+                else if (string.Equals(s, "no", StringComparison.OrdinalIgnoreCase))
+                    return false;
+                return null;
             }
 
             private static bool InvalidRating(string rating)

@@ -2,7 +2,7 @@
 {
     public class Coordinates
     {
-        public decimal Latitute { get; set; }
-        public decimal Longitude { get; set; }
+        public double Latitute { get; set; }
+        public double Longitude { get; set; }
     }
 }

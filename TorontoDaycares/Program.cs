@@ -28,10 +28,18 @@ namespace TorontoDaycares
             await result.WithParsedAsync(async options =>
             {
                 var client = GetHttpClient(MaxConnections);
+                var gpsRepo = new GpsRepository(client);
+                var daycareRepo = new DaycareRepository(client);
+                var repo = new DaycareService(daycareRepo, gpsRepo);
 
-                var repo = new DaycareService(new DaycareRepository(client), new GpsRepository(client));
-                var daycares = await repo.GetDaycares();
+                if (!string.IsNullOrEmpty(options.Address))
+                    options.AddressCoordinates = await gpsRepo.GetCoordinates(options.Address);
 
+                var searchOptions = DaycareSearchOptions.None;
+                if (options.AddressCoordinates != null)
+                    searchOptions |= DaycareSearchOptions.IncludeGps;
+
+                var daycares = await repo.GetDaycares(searchOptions);
                 var topPrograms = FindData(daycares, options);
 
                 var exporter = GetExporter(options);
@@ -60,6 +68,12 @@ namespace TorontoDaycares
                     if (filter.ProgramList.Any())
                         result = result.Where(o2 => filter.ProgramList.Contains(o2.Program.ProgramType));
 
+                    if (filter.AddressCoordinates != null)
+                        result = result.Where(o2 =>
+                            o2.Daycare.GpsCoordinates != null &&
+                            GreatCircleDistance(o2.Daycare.GpsCoordinates, filter.AddressCoordinates) < 15
+                        );
+
                     return result;
                 })
                 .ToArray();
@@ -82,6 +96,30 @@ namespace TorontoDaycares
                 );
 
             return topPrograms;
+        }
+
+        private static double GreatCircleDistance(Coordinates a, Coordinates b)
+        {
+            const double EarthRadius = 6371; // Radius of the Earth in km.
+
+            var lat1 = DegreesToRadians(a.Latitute);
+            var lon1 = DegreesToRadians(a.Longitude);
+            var lat2 = DegreesToRadians(b.Latitute);
+            var lon2 = DegreesToRadians(b.Longitude);
+
+            var diffLat = lat2 - lat1;
+            var diffLon = lon2 - lon1;
+
+            double h = Math.Sin(diffLat / 2) * Math.Sin(diffLat / 2) +
+                Math.Cos(lat1) * Math.Cos(lat2) *
+                Math.Sin(diffLon / 2) * Math.Sin(diffLon / 2);
+
+            return 2 * EarthRadius * Math.Asin(Math.Sqrt(h));
+
+            static double DegreesToRadians(double degrees)
+            {
+                return degrees * Math.PI / 180.0;
+            }
         }
     }
 }

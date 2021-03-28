@@ -77,11 +77,13 @@ namespace TorontoDaycares
             using var result = await resp.Content.ReadAsStreamAsync(cancellationToken);
             var item = await JsonSerializer.DeserializeAsync<OpenStreetMapResponse[]>(result, cancellationToken: cancellationToken);
 
-            // TODO: Error check for count, also use tryparse
+            if (item.Length == 0)
+                return null;
+
             return new Coordinates()
             {
-                Latitute = decimal.Parse(item[0].lat),
-                Longitude = decimal.Parse(item[0].lon)
+                Latitute = double.Parse(item[0].lat),
+                Longitude = double.Parse(item[0].lon)
             };
         }
 

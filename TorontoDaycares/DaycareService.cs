@@ -20,7 +20,7 @@ namespace TorontoDaycares
             GpsRepo = gpsRepo;
         }
 
-        private async Task<IEnumerable<Uri>> GetInvalidUrls()
+        private static async Task<IEnumerable<Uri>> GetInvalidUrls()
         {
             var dataDir = Directory.CreateDirectory(Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory));
             var invalidFile = Path.Join(dataDir.FullName, FileResources.InvalidUrlsFile);
@@ -45,7 +45,7 @@ namespace TorontoDaycares
             return uris;
         }
 
-        public async Task<IEnumerable<Daycare>> GetDaycares(CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<Daycare>> GetDaycares(DaycareSearchOptions options, CancellationToken cancellationToken = default)
         {
             var urls = await DaycareRepo.GetDaycareUrls(cancellationToken);
             var invalidUrls = await GetInvalidUrls();
@@ -76,8 +76,13 @@ namespace TorontoDaycares
 
                         if (daycare.Programs.Any())
                         {
-                            if (daycare.GpsCoordinates == null)
+                            if (daycare.GpsCoordinates == null && options.HasFlag(DaycareSearchOptions.IncludeGps))
+                            {
                                 daycare.GpsCoordinates = await GpsRepo.GetCoordinates(daycare.Address, cancellationToken);
+
+                                if (daycare.GpsCoordinates == null)
+                                    Console.WriteLine($"Could not find GPS info for address {daycare.Address} in url {url}");
+                            }
 
                             using (var s = File.OpenWrite(dataFile))
                             {
