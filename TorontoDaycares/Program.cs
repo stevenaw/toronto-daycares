@@ -12,6 +12,7 @@ namespace TorontoDaycares
     class Program
     {
         const int MaxConnections = 5;
+        const int MaxDrivingDistanceKm = 15;
 
         static HttpClient GetHttpClient(int maxConnections)
         {
@@ -71,7 +72,7 @@ namespace TorontoDaycares
                     if (filter.AddressCoordinates != null)
                         result = result.Where(o2 =>
                             o2.Daycare.GpsCoordinates != null &&
-                            GreatCircleDistance(o2.Daycare.GpsCoordinates, filter.AddressCoordinates) < 15
+                            GreatCircleDistance(o2.Daycare.GpsCoordinates, filter.AddressCoordinates) < MaxDrivingDistanceKm
                         );
 
                     return result;
