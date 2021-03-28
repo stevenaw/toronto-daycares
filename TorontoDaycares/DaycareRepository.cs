@@ -14,18 +14,18 @@ namespace TorontoDaycares
     public class DaycareRepository
     {
         private HttpClient Client { get; }
-        private DirectoryInfo HtmlCache { get; }
+        private DirectoryInfo HtmlCacheDirectory { get; }
 
         public DaycareRepository(HttpClient client)
         {
             Client = client;
-            HtmlCache = Directory.CreateDirectory(Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory, FileResources.RawDataDirectory));
+            HtmlCacheDirectory = Directory.CreateDirectory(Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory, FileResources.RawDataDirectory));
         }
 
         public async Task<Daycare> GetDaycare(Uri url, string id, CancellationToken cancellationToken)
         {
             HtmlDocument html;
-            var rawFile = Path.Join(HtmlCache.FullName, id + ".html");
+            var rawFile = Path.Join(HtmlCacheDirectory.FullName, id + ".html");
 
             if (!File.Exists(rawFile))
             {
@@ -170,14 +170,14 @@ namespace TorontoDaycares
 
                     var program = new DaycareProgram()
                     {
-                        Capacity = Int32.Parse(capacity),
-                        Vacancy = vacancy.ToLower() switch
+                        Capacity = int.Parse(capacity),
+                        Vacancy = vacancy.ToLower() switch // TODO: avoid allocation
                         {
                             "yes" => true,
                             "no" => false,
                             _ => (bool?)null
                         },
-                        Rating = InvalidRating(quality) ? null : (double?)Double.Parse(quality)
+                        Rating = InvalidRating(quality) ? null : double.Parse(quality)
                     };
 
                     if (Enum.TryParse<ProgramType>(type, out var programType))

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
@@ -10,21 +12,36 @@ namespace TorontoDaycares
 {
     public class GpsRepository
     {
-        private readonly HttpClient client;
+        private HttpClient Client { get; }
+        private Dictionary<string, Coordinates> Cache { get; set; }
+        private string CacheFileLocation { get; }
+
 
         private DateTime lastCall = DateTime.MinValue;
 
         public GpsRepository(HttpClient client)
         {
-            this.client = client;
+            Client = client;
+            CacheFileLocation = Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory, "gps.json");
         }
 
         public async Task<Coordinates> GetCoordinates(string address, CancellationToken cancellationToken = default)
         {
+            await InitializeCache();
+
+            if (!Cache.TryGetValue(address, out var coords))
+            {
+                coords = await FetchCoordinates(address, cancellationToken);
+                Cache.Add(address, coords);
+                await PersistCache();
+            }
+
+            return coords;
+        }
+
+        private async Task<Coordinates> FetchCoordinates(string address, CancellationToken cancellationToken = default)
+        {
             // TODO: Thread-safety ??
-            // TODO: Cache of previously-fetched addresses
-            // //  - Single json file mapping address to coords
-            // //  - Mirrored in memory as a Dictionary<string, Coordinates>
 
             var now = DateTime.Now;
             var elapsedSinceLastCall = now - lastCall;
@@ -32,7 +49,6 @@ namespace TorontoDaycares
                 await Task.Delay(TimeSpan.FromSeconds(2) - elapsedSinceLastCall, cancellationToken);
 
             lastCall = DateTime.Now;
-
 
             // Docs: https://nominatim.org/release-docs/latest/api/Search/
             // Usage Policy: https://operations.osmfoundation.org/policies/nominatim/
@@ -54,7 +70,7 @@ namespace TorontoDaycares
             msg.Headers.Add("Upgrade-Insecure-Requests", "1");
             msg.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:87.0) Gecko/20100101 Firefox/87.0");
 
-            using var resp = await client.SendAsync(msg, cancellationToken);
+            using var resp = await Client.SendAsync(msg, cancellationToken);
 
             resp.EnsureSuccessStatusCode();
 
@@ -69,7 +85,33 @@ namespace TorontoDaycares
             };
         }
 
-        public class OpenStreetMapResponse
+        private async Task InitializeCache()
+        {
+            if (Cache == null)
+            {
+                if (File.Exists(CacheFileLocation))
+                {
+                    using (var s = File.OpenRead(CacheFileLocation))
+                    {
+                        Cache = await JsonSerializer.DeserializeAsync<Dictionary<string, Coordinates>>(s);
+                    }
+                }
+                else
+                {
+                    Cache = new Dictionary<string, Coordinates>();
+                }
+            }
+        }
+
+        private async Task PersistCache()
+        {
+            using (var s = File.OpenWrite(CacheFileLocation))
+            {
+                await JsonSerializer.SerializeAsync(s, Cache);
+            }
+        }
+
+        private class OpenStreetMapResponse
         {
             public string lat { get; set; }
             public string lon { get; set; }
