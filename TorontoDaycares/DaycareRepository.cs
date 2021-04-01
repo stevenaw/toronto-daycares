@@ -134,15 +134,20 @@ namespace TorontoDaycares
                     .Trim();
 
                 // Checks to trim off intersection (if present)
-                int closeParenthesisIdx, openParenthesisIdx;
-                if ((closeParenthesisIdx = addressSpan.LastIndexOf(')')) == -1)
-                    daycare.Address = addressSpan.ToString();
-                else if ((openParenthesisIdx = addressSpan.Slice(0, closeParenthesisIdx).LastIndexOf('(')) == -1)
+                int openParenthesisIdx, closeParenthesisIdx = addressSpan.LastIndexOf(')');
+                if (closeParenthesisIdx != -1 && (openParenthesisIdx = addressSpan.Slice(0, closeParenthesisIdx).LastIndexOf('(')) != -1)
+                {
+                    daycare.NearestIntersection = addressSpan.Slice(openParenthesisIdx + 1, closeParenthesisIdx - openParenthesisIdx - 1).Trim().ToString();
+                    addressSpan = addressSpan.Slice(0, openParenthesisIdx).Trim();
+                }
+
+                int firstCommaIdx;
+                if ((firstCommaIdx = addressSpan.IndexOf(',')) == -1)
                     daycare.Address = addressSpan.ToString();
                 else
                 {
-                    daycare.Address = addressSpan.Slice(0, openParenthesisIdx).Trim().ToString();
-                    daycare.NearestIntersection = addressSpan.Slice(openParenthesisIdx + 1, closeParenthesisIdx - openParenthesisIdx - 1).Trim().ToString();
+                    daycare.Unit = addressSpan.Slice(firstCommaIdx + 1).Trim().ToString();
+                    daycare.Address = addressSpan.Slice(0, firstCommaIdx).Trim().ToString();
                 }
 
                 var wardContainer = addressBox.QuerySelector(".ward-link");

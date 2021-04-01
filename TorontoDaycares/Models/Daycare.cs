@@ -11,6 +11,7 @@ namespace TorontoDaycares.Models
         public int WardNumber { get; set; }
 
         public string Address { get; set; }
+        public string Unit { get; set; }
         public string NearestIntersection { get; set; }
 
         public Coordinates GpsCoordinates { get; set; }
