@@ -14,6 +14,11 @@ namespace TorontoDaycares
         private GpsRepository GpsRepo { get; }
         private DaycareRepository DaycareRepo { get; }
 
+        private static DirectoryInfo ParsedDir { get; } = Directory.CreateDirectory(Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory, FileResources.ParsedDataDirectory));
+        private static string InvalidFile { get; } = Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory, FileResources.InvalidUrlsFile);
+
+
+
         public DaycareService(DaycareRepository daycareRepo, GpsRepository gpsRepo)
         {
             DaycareRepo = daycareRepo;
@@ -51,56 +56,12 @@ namespace TorontoDaycares
             var invalidUrls = await GetInvalidUrls();
 
             var daycares = new List<Daycare>();
-            var parsedDir = Directory.CreateDirectory(Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory, FileResources.ParsedDataDirectory));
-            var invalidFile = Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory, FileResources.InvalidUrlsFile);
-
+            
             foreach (var url in urls.Except(invalidUrls))
             {
                 try
                 {
-                    Daycare daycare = null;
-                    var fileNameBase = Path.GetFileNameWithoutExtension(url.ToString());
-
-                    var dataFile = Path.Join(parsedDir.FullName, fileNameBase + ".json");
-                    if (File.Exists(dataFile))
-                    {
-                        using (var s = File.OpenRead(dataFile))
-                        {
-                            daycare = await JsonSerializer.DeserializeAsync<Daycare>(s, cancellationToken: cancellationToken);
-                        }
-                    }
-
-                    if (daycare == null)
-                    {
-                        daycare = await DaycareRepo.GetDaycare(url, fileNameBase, cancellationToken);
-
-                        if (daycare.Programs.Any())
-                        {
-                            if (daycare.GpsCoordinates == null && options.HasFlag(DaycareSearchOptions.IncludeGps))
-                            {
-                                daycare.GpsCoordinates = await GpsRepo.GetCoordinates(daycare.Address, cancellationToken);
-
-                                if (daycare.GpsCoordinates == null)
-                                    Console.WriteLine($"Could not find GPS info for address {daycare.Address} in url {url}");
-                            }
-
-                            using (var s = File.OpenWrite(dataFile))
-                            {
-                                await JsonSerializer.SerializeAsync(s, daycare, cancellationToken: cancellationToken);
-                            }
-                        }
-                        else
-                        {
-                            using (var s = File.Open(invalidFile, FileMode.Append))
-                            {
-                                using (var writer = new StreamWriter(s))
-                                {
-                                    await writer.WriteLineAsync(url.ToString().AsMemory(), cancellationToken: cancellationToken);
-                                }
-                            }
-                        }
-                    }
-
+                    var daycare = await GetDaycare(options, url, cancellationToken);
                     daycares.Add(daycare);
                 }
                 catch (Exception e)
@@ -110,6 +71,54 @@ namespace TorontoDaycares
             }
 
             return daycares;
+        }
+
+        private async Task<Daycare> GetDaycare(DaycareSearchOptions options, Uri url, CancellationToken cancellationToken)
+        {
+            Daycare daycare = null;
+            var fileNameBase = Path.GetFileNameWithoutExtension(url.ToString());
+
+            var dataFile = Path.Join(ParsedDir.FullName, fileNameBase + ".json");
+            if (File.Exists(dataFile))
+            {
+                using (var s = File.OpenRead(dataFile))
+                {
+                    daycare = await JsonSerializer.DeserializeAsync<Daycare>(s, cancellationToken: cancellationToken);
+                }
+            }
+
+            if (daycare == null)
+            {
+                daycare = await DaycareRepo.GetDaycare(url, fileNameBase, cancellationToken);
+
+                if (daycare.Programs.Any())
+                {
+                    if (daycare.GpsCoordinates == null && options.HasFlag(DaycareSearchOptions.IncludeGps))
+                    {
+                        daycare.GpsCoordinates = await GpsRepo.GetCoordinates(daycare.Address, cancellationToken);
+
+                        if (daycare.GpsCoordinates == null)
+                            Console.WriteLine($"Could not find GPS info for address {daycare.Address} in url {url}");
+                    }
+
+                    using (var s = File.OpenWrite(dataFile))
+                    {
+                        await JsonSerializer.SerializeAsync(s, daycare, cancellationToken: cancellationToken);
+                    }
+                }
+                else
+                {
+                    using (var s = File.Open(InvalidFile, FileMode.Append))
+                    {
+                        using (var writer = new StreamWriter(s))
+                        {
+                            await writer.WriteLineAsync(url.ToString().AsMemory(), cancellationToken: cancellationToken);
+                        }
+                    }
+                }
+            }
+
+            return daycare;
         }
     }
 }
