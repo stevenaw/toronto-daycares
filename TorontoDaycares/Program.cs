@@ -1,4 +1,6 @@
 ﻿using CommandLine;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,26 +27,43 @@ namespace TorontoDaycares
         static async Task Main(string[] args)
         {
             var result = Parser.Default.ParseArguments<Options>(args);
+            var builder = new HostBuilder()
+               .ConfigureServices((hostContext, services) =>
+               {
+                   // TODO: inject httpclientfactory instead, but must be able to configure maxconnections
+                   services.AddSingleton(GetHttpClient(MaxConnections));
+
+                   services.AddSingleton<GpsRepository>();
+                   services.AddSingleton<DaycareRepository>();
+                   services.AddSingleton<DaycareService>();
+               }).UseConsoleLifetime();
+
+            var host = builder.Build();
 
             await result.WithParsedAsync(async options =>
             {
-                var client = GetHttpClient(MaxConnections);
-                var gpsRepo = new GpsRepository(client);
-                var daycareRepo = new DaycareRepository(client);
-                var repo = new DaycareService(daycareRepo, gpsRepo);
+                using (var serviceScope = host.Services.CreateScope())
+                {
+                    var services = serviceScope.ServiceProvider;
 
-                if (!string.IsNullOrEmpty(options.Address))
-                    options.AddressCoordinates = await gpsRepo.GetCoordinates(options.Address);
+                    if (!string.IsNullOrEmpty(options.Address))
+                    {
+                        var gpsRepo = services.GetRequiredService<GpsRepository>();
+                        options.AddressCoordinates = await gpsRepo.GetCoordinates(options.Address);
+                    }
 
-                var searchOptions = DaycareSearchOptions.None;
-                if (options.AddressCoordinates != null)
-                    searchOptions |= DaycareSearchOptions.IncludeGps;
+                    var searchOptions = DaycareSearchOptions.None;
+                    if (options.AddressCoordinates != null)
+                        searchOptions |= DaycareSearchOptions.IncludeGps;
 
-                var daycares = await repo.GetDaycares(searchOptions);
-                var topPrograms = FindData(daycares, options);
+                    var service = services.GetRequiredService<DaycareService>();
 
-                var exporter = GetExporter(options);
-                exporter.Export(options, topPrograms);
+                    var daycares = await service.GetDaycares(searchOptions);
+                    var topPrograms = FindData(daycares, options);
+
+                    var exporter = GetExporter(options);
+                    exporter.Export(options, topPrograms);
+                }
             });
         }
 
