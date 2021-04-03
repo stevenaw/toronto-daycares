@@ -42,28 +42,26 @@ namespace TorontoDaycares
 
             await result.WithParsedAsync(async options =>
             {
-                using (var serviceScope = host.Services.CreateScope())
+                using var serviceScope = host.Services.CreateScope();
+                var services = serviceScope.ServiceProvider;
+
+                if (!string.IsNullOrEmpty(options.Address))
                 {
-                    var services = serviceScope.ServiceProvider;
-
-                    if (!string.IsNullOrEmpty(options.Address))
-                    {
-                        var gpsRepo = services.GetRequiredService<GpsRepository>();
-                        options.AddressCoordinates = await gpsRepo.GetCoordinates(options.Address);
-                    }
-
-                    var searchOptions = DaycareSearchOptions.None;
-                    if (options.AddressCoordinates != null)
-                        searchOptions |= DaycareSearchOptions.IncludeGps;
-
-                    var service = services.GetRequiredService<DaycareService>();
-
-                    var daycares = await service.GetDaycares(searchOptions);
-                    var topPrograms = FindData(daycares, options);
-
-                    var exporter = GetExporter(options);
-                    exporter.Export(options, topPrograms);
+                    var gpsRepo = services.GetRequiredService<GpsRepository>();
+                    options.AddressCoordinates = await gpsRepo.GetCoordinates(options.Address);
                 }
+
+                var searchOptions = DaycareSearchOptions.None;
+                if (options.AddressCoordinates != null)
+                    searchOptions |= DaycareSearchOptions.IncludeGps;
+
+                var service = services.GetRequiredService<DaycareService>();
+
+                var daycares = await service.GetDaycares(searchOptions);
+                var topPrograms = FindData(daycares, options);
+
+                var exporter = GetExporter(options);
+                exporter.Export(options, topPrograms);
             });
         }
 
