@@ -18,7 +18,6 @@ namespace TorontoDaycares
         private static string InvalidFile { get; } = Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory, FileResources.InvalidUrlsFile);
 
 
-
         public DaycareService(DaycareRepository daycareRepo, GpsRepository gpsRepo)
         {
             DaycareRepo = daycareRepo;
@@ -55,22 +54,45 @@ namespace TorontoDaycares
             var urls = await DaycareRepo.GetDaycareUrls(cancellationToken);
             var invalidUrls = await GetInvalidUrls();
 
-            var daycares = new List<Daycare>();
-            
+
+            var dataFile = Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory, "daycares.json");
+
+            Dictionary<string, Daycare> daycares;
+            if (File.Exists(dataFile))
+            {
+                using (var fs = File.OpenRead(dataFile))
+                    daycares = await JsonSerializer.DeserializeAsync<Dictionary<string, Daycare>>(fs, cancellationToken: cancellationToken);
+            }
+            else
+            {
+                daycares = new Dictionary<string, Daycare>();
+            }
+
+            var newDaycares = 0;
             foreach (var url in urls.Except(invalidUrls))
             {
-                try
+                var urlString = url.ToString();
+                if (!daycares.ContainsKey(urlString))
                 {
-                    var daycare = await GetDaycare(options, url, cancellationToken);
-                    daycares.Add(daycare);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine($"Error for url ({url}) : {e}");
+                    try
+                    {
+                        daycares[urlString] = await GetDaycare(options, url, cancellationToken);
+                        newDaycares++;
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"Error for url ({urlString}) : {e}");
+                    }
                 }
             }
 
-            return daycares;
+            if (newDaycares > 0)
+            {
+                using (var fs = File.OpenWrite(dataFile))
+                    await JsonSerializer.SerializeAsync(fs, daycares, cancellationToken: cancellationToken);
+            }
+
+            return daycares.Values;
         }
 
         private async Task<Daycare> GetDaycare(DaycareSearchOptions options, Uri url, CancellationToken cancellationToken)

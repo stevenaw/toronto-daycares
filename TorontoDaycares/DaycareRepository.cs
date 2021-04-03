@@ -121,7 +121,7 @@ namespace TorontoDaycares
                 var header = topInfoBox.QuerySelector("h2").InnerText.AsSpan();
                 var idText = header.Slice(name.Length + 2).Trim(')');
 
-                daycare.Id = Int32.Parse(idText);
+                daycare.Id = int.Parse(idText);
                 daycare.Name = name;
 
                 // Get address
