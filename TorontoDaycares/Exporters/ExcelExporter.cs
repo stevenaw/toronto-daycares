@@ -7,7 +7,7 @@ namespace TorontoDaycares.Exporters
 {
     public class ExcelExporter : IExporter
     {
-        private string FileName { get; set; }
+        private string FileName { get; }
 
         static ExcelExporter()
         {

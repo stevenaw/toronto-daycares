@@ -43,7 +43,6 @@ namespace TorontoDaycares
         {
             // Docs: https://nominatim.org/release-docs/latest/api/Search/
             // Usage Policy: https://operations.osmfoundation.org/policies/nominatim/
-            // TODO: Include a citation of licensing
 
             var addressParam = HttpUtility.UrlEncode(address);
             var url = $"https://nominatim.openstreetmap.org/search?street={addressParam}&city=Toronto&state=ON&country=CA&format=json&limit=1";
@@ -67,8 +66,6 @@ namespace TorontoDaycares
 
         private async Task<OpenStreetMapResponse[]> RequestFromOpenStreetMaps(string url, CancellationToken cancellationToken)
         {
-            // TODO: Thread-safety ??
-
             var now = DateTime.Now;
             var elapsedSinceLastCall = now - lastCall;
             if (elapsedSinceLastCall.TotalSeconds < 2)
