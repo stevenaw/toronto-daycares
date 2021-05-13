@@ -13,16 +13,7 @@ namespace TorontoDaycares
 {
     class Program
     {
-        const int MaxConnections = 5;
         const int MaxDrivingDistanceKm = 15;
-
-        static HttpClient GetHttpClient(int maxConnections)
-        {
-            return HttpClientFactory.Create(new HttpClientHandler()
-            {
-                MaxConnectionsPerServer = maxConnections
-            });
-        }
 
         static async Task Main(string[] args)
         {
@@ -30,11 +21,19 @@ namespace TorontoDaycares
             var builder = new HostBuilder()
                .ConfigureServices((hostContext, services) =>
                {
-                   // TODO: inject httpclientfactory instead, but must be able to configure maxconnections
-                   services.AddSingleton(GetHttpClient(MaxConnections));
+                   services.AddHttpClient<GpsRepository>()
+                       .ConfigureHttpClient(client => GpsRepository.ConfigureClient(client))
+                       .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler()
+                       {
+                           MaxConnectionsPerServer = 1
+                       });
 
-                   services.AddSingleton<GpsRepository>();
-                   services.AddSingleton<DaycareRepository>();
+                   services.AddHttpClient<DaycareRepository>()
+                       .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler()
+                       {
+                           MaxConnectionsPerServer = 5
+                       });
+
                    services.AddSingleton<DaycareService>();
                }).UseConsoleLifetime();
 

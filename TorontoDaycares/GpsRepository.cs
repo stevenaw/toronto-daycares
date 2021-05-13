@@ -25,6 +25,22 @@ namespace TorontoDaycares
             CacheFileLocation = Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory, "gps.json");
         }
 
+        public static void ConfigureClient(HttpClient client)
+        {
+            client.BaseAddress = new Uri("https://nominatim.openstreetmap.org", UriKind.Absolute);
+
+            client.DefaultRequestHeaders.Host = "nominatim.openstreetmap.org";
+            client.DefaultRequestHeaders.Add("AcceptEncoding", "gzip, deflate, br");
+            client.DefaultRequestHeaders.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
+            client.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.5");
+            client.DefaultRequestHeaders.Add("Cache-Control", "no-cache");
+            client.DefaultRequestHeaders.Add("Connection", "keep-alive");
+            client.DefaultRequestHeaders.Add("DNT", "1");
+            client.DefaultRequestHeaders.Add("Pragma", "no-cache");
+            client.DefaultRequestHeaders.Add("Upgrade-Insecure-Requests", "1");
+            client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:87.0) Gecko/20100101 Firefox/87.0");
+        }
+
         public async Task<Coordinates> GetCoordinates(string address, CancellationToken cancellationToken = default)
         {
             await InitializeCache();
@@ -45,12 +61,12 @@ namespace TorontoDaycares
             // Usage Policy: https://operations.osmfoundation.org/policies/nominatim/
 
             var addressParam = HttpUtility.UrlEncode(address);
-            var url = $"https://nominatim.openstreetmap.org/search?street={addressParam}&city=Toronto&state=ON&country=CA&format=json&limit=1";
+            var url = $"/search?street={addressParam}&city=Toronto&state=ON&country=CA&format=json&limit=1";
             var item = await RequestFromOpenStreetMaps(url, cancellationToken);
 
             if (item.Length == 0)
             {
-                url = $"https://nominatim.openstreetmap.org/search?q={addressParam},Toronto,ON,CA&format=json&limit=1";
+                url = $"/search?q={addressParam},Toronto,ON,CA&format=json&limit=1";
                 item = await RequestFromOpenStreetMaps(url, cancellationToken);
             }
 
@@ -73,20 +89,7 @@ namespace TorontoDaycares
 
             lastCall = DateTime.Now;
 
-            var msg = new HttpRequestMessage(HttpMethod.Get, url);
-
-            msg.Headers.Host = "nominatim.openstreetmap.org";
-            msg.Headers.Add("AcceptEncoding", "gzip, deflate, br");
-            msg.Headers.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
-            msg.Headers.Add("Accept-Language", "en-US,en;q=0.5");
-            msg.Headers.Add("Cache-Control", "no-cache");
-            msg.Headers.Add("Connection", "keep-alive");
-            msg.Headers.Add("DNT", "1");
-            msg.Headers.Add("Pragma", "no-cache");
-            msg.Headers.Add("Upgrade-Insecure-Requests", "1");
-            msg.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:87.0) Gecko/20100101 Firefox/87.0");
-
-            var resp = await Client.SendAsync(msg, cancellationToken);
+            var resp = await Client.GetAsync(url, cancellationToken);
             resp.EnsureSuccessStatusCode();
 
             using var result = await resp.Content.ReadAsStreamAsync(cancellationToken);
