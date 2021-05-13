@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -89,13 +90,7 @@ namespace TorontoDaycares
 
             lastCall = DateTime.Now;
 
-            var resp = await Client.GetAsync(url, cancellationToken);
-            resp.EnsureSuccessStatusCode();
-
-            using var result = await resp.Content.ReadAsStreamAsync(cancellationToken);
-            var item = await JsonSerializer.DeserializeAsync<OpenStreetMapResponse[]>(result, cancellationToken: cancellationToken);
-
-            return item;
+            return await Client.GetFromJsonAsync<OpenStreetMapResponse[]>(url, cancellationToken);
         }
 
         private async Task InitializeCache()
