@@ -18,29 +18,10 @@ namespace TorontoDaycares
         static async Task Main(string[] args)
         {
             var result = Parser.Default.ParseArguments<Options>(args);
-            var builder = new HostBuilder()
-               .ConfigureServices((hostContext, services) =>
-               {
-                   services.AddHttpClient<GpsRepository>()
-                       .ConfigureHttpClient(client => GpsRepository.ConfigureClient(client))
-                       .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler()
-                       {
-                           MaxConnectionsPerServer = 1
-                       });
-
-                   services.AddHttpClient<DaycareRepository>()
-                       .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler()
-                       {
-                           MaxConnectionsPerServer = 5
-                       });
-
-                   services.AddSingleton<DaycareService>();
-               }).UseConsoleLifetime();
-
-            var host = builder.Build();
-
             await result.WithParsedAsync(async options =>
             {
+                var host = BuildHost(options);
+
                 using var serviceScope = host.Services.CreateScope();
                 var services = serviceScope.ServiceProvider;
 
@@ -59,16 +40,38 @@ namespace TorontoDaycares
                 var daycares = await service.GetDaycares(searchOptions);
                 var topPrograms = FindData(daycares, options);
 
-                var exporter = GetExporter(options);
+                var exporter = services.GetRequiredService<IExporter>();
                 exporter.Export(options, topPrograms);
             });
         }
 
-        private static IExporter GetExporter(Options options)
+        private static IHost BuildHost(Options options)
         {
-            if (!string.IsNullOrEmpty(options.OutputFile))
-                return new ExcelExporter(options.OutputFile);
-            return new ConsoleExporter();
+            var builder = new HostBuilder()
+               .ConfigureServices((hostContext, services) =>
+               {
+                   services.AddHttpClient<GpsRepository>()
+                       .ConfigureHttpClient(client => GpsRepository.ConfigureClient(client))
+                       .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler()
+                       {
+                           MaxConnectionsPerServer = 1
+                       });
+
+                   services.AddHttpClient<DaycareRepository>()
+                       .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler()
+                       {
+                           MaxConnectionsPerServer = 5
+                       });
+
+                   services.AddTransient<DaycareService>();
+
+                   if (!string.IsNullOrEmpty(options.OutputFile))
+                       services.AddTransient<IExporter>(builder => new ExcelExporter(options.OutputFile));
+                   else
+                       services.AddTransient<IExporter>(builder => new ConsoleExporter());
+               }).UseConsoleLifetime();
+
+            return builder.Build();
         }
 
         private static Dictionary<ProgramType, List<(Daycare Daycare, DaycareProgram Program)>> FindData(IEnumerable<Daycare> daycares, Options filter)
