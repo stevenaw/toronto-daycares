@@ -44,7 +44,7 @@ namespace TorontoDaycares
                 var topPrograms = FindData(daycares, options);
 
                 var exporter = services.GetRequiredService<IExporter>();
-                exporter.Export(options, topPrograms);
+                await exporter.ExportAsync(options, topPrograms);
             });
         }
 

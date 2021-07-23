@@ -1,6 +1,7 @@
 ﻿using OfficeOpenXml;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using TorontoDaycares.Models;
 
 namespace TorontoDaycares.Exporters
@@ -19,8 +20,7 @@ namespace TorontoDaycares.Exporters
             FileName = fileName;
         }
 
-        // TODO: Async
-        public void Export(Options filter, Dictionary<ProgramType, List<(Daycare Daycare, DaycareProgram Program)>> items)
+        public async Task ExportAsync(Options filter, Dictionary<ProgramType, List<(Daycare Daycare, DaycareProgram Program)>> items)
         {
             using (var package = new ExcelPackage())
             {
@@ -51,9 +51,9 @@ namespace TorontoDaycares.Exporters
                     worksheet.Cells.AutoFitColumns(0);
                 }
 
-                using (var file = File.OpenWrite(FileName))
+                await using (var file = File.OpenWrite(FileName))
                 {
-                    package.SaveAs(file);
+                    await package.SaveAsAsync(file);
                 }
             }
         }

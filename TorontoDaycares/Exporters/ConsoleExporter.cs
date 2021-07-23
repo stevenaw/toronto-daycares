@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using TorontoDaycares.Models;
 
 namespace TorontoDaycares.Exporters
 {
     public class ConsoleExporter : IExporter
     {
-        public void Export(Options filter, Dictionary<ProgramType, List<(Daycare Daycare, DaycareProgram Program)>> items)
+        // TODO: Async
+
+        public Task ExportAsync(Options filter, Dictionary<ProgramType, List<(Daycare Daycare, DaycareProgram Program)>> items)
         {
             foreach (var programType in items)
             {
@@ -24,6 +27,8 @@ namespace TorontoDaycares.Exporters
 
                 Console.WriteLine();
             }
+
+            return Task.CompletedTask;
         }
     }
 }
