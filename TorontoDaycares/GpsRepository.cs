@@ -99,7 +99,7 @@ namespace TorontoDaycares
             {
                 if (File.Exists(CacheFileLocation))
                 {
-                    using (var s = File.OpenRead(CacheFileLocation))
+                    await using (var s = File.OpenRead(CacheFileLocation))
                     {
                         Cache = await JsonSerializer.DeserializeAsync<Dictionary<string, Coordinates>>(s);
                     }
@@ -113,7 +113,7 @@ namespace TorontoDaycares
 
         private async Task PersistCache()
         {
-            using (var s = File.OpenWrite(CacheFileLocation))
+            await using (var s = File.OpenWrite(CacheFileLocation))
             {
                 await JsonSerializer.SerializeAsync(s, Cache);
             }

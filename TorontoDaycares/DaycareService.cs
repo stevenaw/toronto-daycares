@@ -33,7 +33,7 @@ namespace TorontoDaycares
                 return Array.Empty<Uri>();
 
             var uris = new List<Uri>();
-            using (var stream = File.OpenRead(invalidFile))
+            await using (var stream = File.OpenRead(invalidFile))
             {
                 using (var reader = new StreamReader(stream))
                 {
@@ -60,7 +60,7 @@ namespace TorontoDaycares
             Dictionary<string, Daycare> daycares;
             if (File.Exists(dataFile))
             {
-                using (var fs = File.OpenRead(dataFile))
+                await using (var fs = File.OpenRead(dataFile))
                     daycares = await JsonSerializer.DeserializeAsync<Dictionary<string, Daycare>>(fs, cancellationToken: cancellationToken);
             }
             else
@@ -88,7 +88,7 @@ namespace TorontoDaycares
 
             if (newDaycares > 0)
             {
-                using (var fs = File.OpenWrite(dataFile))
+                await using (var fs = File.OpenWrite(dataFile))
                     await JsonSerializer.SerializeAsync(fs, daycares, cancellationToken: cancellationToken);
             }
 
@@ -103,7 +103,7 @@ namespace TorontoDaycares
             var dataFile = Path.Join(ParsedDir.FullName, fileNameBase + ".json");
             if (File.Exists(dataFile))
             {
-                using (var s = File.OpenRead(dataFile))
+                await using (var s = File.OpenRead(dataFile))
                 {
                     daycare = await JsonSerializer.DeserializeAsync<Daycare>(s, cancellationToken: cancellationToken);
                 }
@@ -130,7 +130,7 @@ namespace TorontoDaycares
                 }
                 else
                 {
-                    using (var s = File.Open(InvalidFile, FileMode.Append))
+                    await using (var s = File.Open(InvalidFile, FileMode.Append))
                     {
                         using (var writer = new StreamWriter(s))
                         {
