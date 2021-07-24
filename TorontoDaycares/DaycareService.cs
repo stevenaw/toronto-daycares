@@ -13,15 +13,17 @@ namespace TorontoDaycares
     {
         private GpsRepository GpsRepo { get; }
         private DaycareRepository DaycareRepo { get; }
+        private CityWardRepository CityWardRepo { get; }
 
         private static DirectoryInfo ParsedDir { get; } = Directory.CreateDirectory(Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory, FileResources.ParsedDataDirectory));
         private static string InvalidFile { get; } = Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory, FileResources.InvalidUrlsFile);
 
 
-        public DaycareService(DaycareRepository daycareRepo, GpsRepository gpsRepo)
+        public DaycareService(DaycareRepository daycareRepo, GpsRepository gpsRepo, CityWardRepository cityWardRepo)
         {
             DaycareRepo = daycareRepo;
             GpsRepo = gpsRepo;
+            CityWardRepo = cityWardRepo;
         }
 
         private static async Task<IEnumerable<Uri>> GetInvalidUrls()
@@ -118,9 +120,17 @@ namespace TorontoDaycares
                     if (daycare.GpsCoordinates == null && options.HasFlag(DaycareSearchOptions.IncludeGps))
                     {
                         daycare.GpsCoordinates = await GpsRepo.GetCoordinates(daycare.Address, cancellationToken);
-
                         if (daycare.GpsCoordinates == null)
                             Console.WriteLine($"Could not find GPS info for address {daycare.Address} in url {url}");
+                    }
+
+                    if (daycare.WardNumber == default && !string.IsNullOrWhiteSpace(daycare.WardName))
+                    {
+                        var ward = await CityWardRepo.GetWardByNameAsync(daycare.WardName);
+                        daycare.WardNumber = ward?.Number ?? default;
+
+                        if (daycare.WardNumber == default)
+                            Console.WriteLine($"Could not find ward number for ward name {daycare.WardName}, address {daycare.Address} in url {url}");
                     }
 
                     using (var s = File.OpenWrite(dataFile))

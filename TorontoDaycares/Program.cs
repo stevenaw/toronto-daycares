@@ -60,6 +60,12 @@ namespace TorontoDaycares
                            MaxConnectionsPerServer = 1
                        });
 
+                   services.AddHttpClient<CityWardRepository>()
+                       .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler()
+                       {
+                           MaxConnectionsPerServer = 2
+                       });
+
                    services.AddHttpClient<DaycareRepository>()
                        .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler()
                        {

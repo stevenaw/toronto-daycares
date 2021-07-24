@@ -151,11 +151,15 @@ namespace TorontoDaycares
                 }
 
                 var wardContainer = addressBox.QuerySelector(".ward-link");
-                var wardNumber = wardContainer.InnerText
+                var ward = wardContainer.InnerText
                     .AsSpan()
                     .Slice("Ward:".Length + 1)
                     .Trim();
-                daycare.WardNumber = int.Parse(wardNumber);
+
+                if (int.TryParse(ward, out var wardNumber))
+                    daycare.WardNumber = wardNumber;
+                else
+                    daycare.WardName = ward.ToString();
 
                 daycare.Uri = uri;
 

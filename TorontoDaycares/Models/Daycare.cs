@@ -8,7 +8,9 @@ namespace TorontoDaycares.Models
         public int Id { get; set; }
         public string Name { get; set; }
         public Uri Uri { get; set; }
+
         public int WardNumber { get; set; }
+        public string WardName { get; set; }
 
         public string Address { get; set; }
         public string Unit { get; set; }
