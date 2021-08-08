@@ -1,8 +1,8 @@
 ﻿namespace TorontoDaycares.Models
 {
-    public class Coordinates
+    public record Coordinates
     {
-        public double Latitute { get; set; }
-        public double Longitude { get; set; }
+        public double Latitute { get; init; }
+        public double Longitude { get; init; }
     }
 }

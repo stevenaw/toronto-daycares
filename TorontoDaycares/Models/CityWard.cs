@@ -1,8 +1,8 @@
 ﻿namespace TorontoDaycares.Models
 {
-    public class CityWard
+    public record CityWard
     {
-        public string Name { get; set; }
-        public int Number { get; set; }
+        public string Name { get; init; }
+        public int Number { get; init; }
     }
 }

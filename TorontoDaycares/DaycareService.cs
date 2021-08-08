@@ -56,34 +56,32 @@ namespace TorontoDaycares
             var urls = await DaycareRepo.GetDaycareUrls(cancellationToken);
             var invalidUrls = await GetInvalidUrls();
 
-
             var dataFile = Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory, "daycares.json");
 
-            Dictionary<string, Daycare> daycares;
+            Dictionary<Uri, Daycare> daycares = new Dictionary<Uri, Daycare>();
             if (File.Exists(dataFile))
             {
                 await using (var fs = File.OpenRead(dataFile))
-                    daycares = await JsonSerializer.DeserializeAsync<Dictionary<string, Daycare>>(fs, cancellationToken: cancellationToken);
-            }
-            else
-            {
-                daycares = new Dictionary<string, Daycare>();
+                {
+                    var items = JsonSerializer.DeserializeAsyncEnumerable<Daycare>(fs, cancellationToken: cancellationToken);
+                    await foreach (var item in items)
+                        daycares.Add(item.Uri, item);
+                }
             }
 
             var newDaycares = 0;
             foreach (var url in urls.Except(invalidUrls))
             {
-                var urlString = url.ToString();
-                if (!daycares.ContainsKey(urlString))
+                if (!daycares.ContainsKey(url))
                 {
                     try
                     {
-                        daycares[urlString] = await GetDaycare(options, url, cancellationToken);
+                        daycares[url] = await GetDaycare(options, url, cancellationToken);
                         newDaycares++;
                     }
                     catch (Exception e)
                     {
-                        Console.WriteLine($"Error for url ({urlString}) : {e}");
+                        Console.WriteLine($"Error for url ({url}) : {e}");
                     }
                 }
             }
@@ -91,7 +89,7 @@ namespace TorontoDaycares
             if (newDaycares > 0)
             {
                 await using (var fs = File.OpenWrite(dataFile))
-                    await JsonSerializer.SerializeAsync(fs, daycares, cancellationToken: cancellationToken);
+                    await JsonSerializer.SerializeAsync(fs, daycares.Values, cancellationToken: cancellationToken);
             }
 
             return daycares.Values;
