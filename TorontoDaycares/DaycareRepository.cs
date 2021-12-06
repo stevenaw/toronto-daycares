@@ -1,12 +1,5 @@
 ﻿using HtmlAgilityPack;
 using HtmlAgilityPack.CssSelectors.NetCore;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
 using TorontoDaycares.Models;
 
 namespace TorontoDaycares
@@ -167,7 +160,7 @@ namespace TorontoDaycares
                 daycare.Programs = new List<DaycareProgram>();
 
                 var programTable = programBox.QuerySelector("table");
-                var programRows = programTable == null ? Array.Empty<HtmlNode>() : programTable.QuerySelectorAll("tbody tr");
+                var programRows = programTable is null ? Array.Empty<HtmlNode>() : programTable.QuerySelectorAll("tbody tr");
 
                 foreach (var row in programRows)
                 {
@@ -202,7 +195,7 @@ namespace TorontoDaycares
             private static string GetCellContents(HtmlNode node)
             {
                 var link = node.QuerySelector("a");
-                var text = link == null ? node.InnerText : link.InnerText;
+                var text = link is null ? node.InnerText : link.InnerText;
                 return text.Trim();
             }
 

@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Text.Json;
 using TorontoDaycares.Models;
 
 namespace TorontoDaycares
@@ -17,7 +11,6 @@ namespace TorontoDaycares
 
         private static DirectoryInfo ParsedDir { get; } = Directory.CreateDirectory(Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory, FileResources.ParsedDataDirectory));
         private static string InvalidFile { get; } = Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory, FileResources.InvalidUrlsFile);
-
 
         public DaycareService(DaycareRepository daycareRepo, GpsRepository gpsRepo, CityWardRepository cityWardRepo)
         {
@@ -37,14 +30,12 @@ namespace TorontoDaycares
             var uris = new List<Uri>();
             await using (var stream = File.OpenRead(invalidFile))
             {
-                using (var reader = new StreamReader(stream))
+                using var reader = new StreamReader(stream);
+                while (!reader.EndOfStream)
                 {
-                    while (!reader.EndOfStream)
-                    {
-                        var line = await reader.ReadLineAsync();
-                        if (!string.IsNullOrWhiteSpace(line))
-                            uris.Add(new Uri(line));
-                    }
+                    var line = await reader.ReadLineAsync();
+                    if (!string.IsNullOrWhiteSpace(line))
+                        uris.Add(new Uri(line));
                 }
             }
 
@@ -61,12 +52,11 @@ namespace TorontoDaycares
             Dictionary<Uri, Daycare> daycares = new Dictionary<Uri, Daycare>();
             if (File.Exists(dataFile))
             {
-                await using (var fs = File.OpenRead(dataFile))
-                {
-                    var items = JsonSerializer.DeserializeAsyncEnumerable<Daycare>(fs, cancellationToken: cancellationToken);
-                    await foreach (var item in items)
-                        daycares.Add(item.Uri, item);
-                }
+                await using var fs = File.OpenRead(dataFile);
+                var items = JsonSerializer.DeserializeAsyncEnumerable<Daycare>(fs, cancellationToken: cancellationToken);
+
+                await foreach (var item in items)
+                    daycares.Add(item!.Uri, item);
             }
 
             var newDaycares = 0;
@@ -88,8 +78,8 @@ namespace TorontoDaycares
 
             if (newDaycares > 0)
             {
-                await using (var fs = File.OpenWrite(dataFile))
-                    await JsonSerializer.SerializeAsync(fs, daycares.Values, cancellationToken: cancellationToken);
+                await using var fs = File.OpenWrite(dataFile);
+                await JsonSerializer.SerializeAsync(fs, daycares.Values, cancellationToken: cancellationToken);
             }
 
             return daycares.Values;
@@ -97,28 +87,26 @@ namespace TorontoDaycares
 
         private async Task<Daycare> GetDaycare(DaycareSearchOptions options, Uri url, CancellationToken cancellationToken)
         {
-            Daycare daycare = null;
+            Daycare? daycare = null;
             var fileNameBase = Path.GetFileNameWithoutExtension(url.ToString());
 
             var dataFile = Path.Join(ParsedDir.FullName, fileNameBase + ".json");
             if (File.Exists(dataFile))
             {
-                await using (var s = File.OpenRead(dataFile))
-                {
-                    daycare = await JsonSerializer.DeserializeAsync<Daycare>(s, cancellationToken: cancellationToken);
-                }
+                await using var s = File.OpenRead(dataFile);
+                daycare = await JsonSerializer.DeserializeAsync<Daycare>(s, cancellationToken: cancellationToken);
             }
 
-            if (daycare == null)
+            if (daycare is null)
             {
                 daycare = await DaycareRepo.GetDaycare(url, fileNameBase, cancellationToken);
 
                 if (daycare.Programs.Any())
                 {
-                    if (daycare.GpsCoordinates == null && options.HasFlag(DaycareSearchOptions.IncludeGps))
+                    if (daycare.GpsCoordinates is null && options.HasFlag(DaycareSearchOptions.IncludeGps))
                     {
                         daycare.GpsCoordinates = await GpsRepo.GetCoordinates(daycare.Address, cancellationToken);
-                        if (daycare.GpsCoordinates == null)
+                        if (daycare.GpsCoordinates is null)
                             Console.WriteLine($"Could not find GPS info for address {daycare.Address} in url {url}");
                     }
 
@@ -131,20 +119,14 @@ namespace TorontoDaycares
                             Console.WriteLine($"Could not find ward number for ward name {daycare.WardName}, address {daycare.Address} in url {url}");
                     }
 
-                    using (var s = File.OpenWrite(dataFile))
-                    {
-                        await JsonSerializer.SerializeAsync(s, daycare, cancellationToken: cancellationToken);
-                    }
+                    using var s = File.OpenWrite(dataFile);
+                    await JsonSerializer.SerializeAsync(s, daycare, cancellationToken: cancellationToken);
                 }
                 else
                 {
-                    await using (var s = File.Open(InvalidFile, FileMode.Append))
-                    {
-                        using (var writer = new StreamWriter(s))
-                        {
-                            await writer.WriteLineAsync(url.ToString().AsMemory(), cancellationToken: cancellationToken);
-                        }
-                    }
+                    await using var s = File.Open(InvalidFile, FileMode.Append);
+                    using var writer = new StreamWriter(s);
+                    await writer.WriteLineAsync(url.ToString().AsMemory(), cancellationToken: cancellationToken);
                 }
             }
 

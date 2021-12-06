@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace TorontoDaycares.Models
+﻿namespace TorontoDaycares.Models
 {
     [Flags]
     public enum DaycareSearchOptions

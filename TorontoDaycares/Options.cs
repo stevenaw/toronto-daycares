@@ -1,5 +1,4 @@
 ﻿using CommandLine;
-using System.Collections.Generic;
 using TorontoDaycares.Models;
 
 namespace TorontoDaycares

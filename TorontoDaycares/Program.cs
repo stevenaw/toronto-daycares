@@ -1,12 +1,6 @@
 ﻿using CommandLine;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
 using TorontoDaycares.Exporters;
 using TorontoDaycares.Models;
 
@@ -35,7 +29,7 @@ namespace TorontoDaycares
                 }
 
                 var searchOptions = DaycareSearchOptions.None;
-                if (options.AddressCoordinates != null)
+                if (options.AddressCoordinates is not null)
                     searchOptions |= DaycareSearchOptions.IncludeGps;
 
                 var service = services.GetRequiredService<DaycareService>();
@@ -97,9 +91,9 @@ namespace TorontoDaycares
                     if (filter.ProgramList.Any())
                         result = result.Where(o2 => filter.ProgramList.Contains(o2.Program.ProgramType));
 
-                    if (filter.AddressCoordinates != null)
+                    if (filter.AddressCoordinates is not null)
                         result = result.Where(o2 =>
-                            o2.Daycare.GpsCoordinates != null &&
+                            o2.Daycare.GpsCoordinates is not null &&
                             GreatCircleDistance(o2.Daycare.GpsCoordinates, filter.AddressCoordinates) < MaxDrivingDistanceKm
                         );
 

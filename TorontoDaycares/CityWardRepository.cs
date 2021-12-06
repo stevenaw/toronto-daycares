@@ -1,10 +1,6 @@
-﻿using CsvHelper;
+﻿using System.Globalization;
+using CsvHelper;
 using CsvHelper.Configuration;
-using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
-using System.Net.Http;
-using System.Threading.Tasks;
 using TorontoDaycares.Models;
 
 namespace TorontoDaycares
@@ -13,8 +9,7 @@ namespace TorontoDaycares
     {
         private HttpClient Client { get; }
         private string CacheFileLocation { get; }
-
-        private Dictionary<string, CityWard> Wards { get; set; }
+        private Dictionary<string, CityWard>? Wards { get; set; }
 
         public CityWardRepository(HttpClient client)
         {
@@ -33,7 +28,7 @@ namespace TorontoDaycares
 
         private async Task InitializeCache()
         {
-            if (Wards == null)
+            if (Wards is null)
             {
                 if (!File.Exists(CacheFileLocation))
                 {
@@ -60,12 +55,13 @@ namespace TorontoDaycares
             }
         }
 
-        internal async Task<CityWard> GetWardByNameAsync(string wardName)
+        internal async Task<CityWard?> GetWardByNameAsync(string wardName)
         {
             await InitializeCache();
 
             if (Wards.TryGetValue(wardName, out var ward))
                 return ward;
+
             return default;
         }
     }

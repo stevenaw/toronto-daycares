@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Net.Http;
-using System.Net.Http.Json;
+﻿using System.Net.Http.Json;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Web;
 using TorontoDaycares.Models;
 
@@ -14,9 +8,8 @@ namespace TorontoDaycares
     public class GpsRepository
     {
         private HttpClient Client { get; }
-        private Dictionary<string, Coordinates> Cache { get; set; }
+        private Dictionary<string, Coordinates>? Cache { get; set; }
         private string CacheFileLocation { get; }
-
 
         private DateTime lastCall = DateTime.MinValue;
 
@@ -95,7 +88,7 @@ namespace TorontoDaycares
 
         private async Task InitializeCache()
         {
-            if (Cache == null)
+            if (Cache is null)
             {
                 if (File.Exists(CacheFileLocation))
                 {
