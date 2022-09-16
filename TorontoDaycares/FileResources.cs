@@ -2,7 +2,7 @@
 {
     internal static class FileResources
     {
-        public const string DataDirectory = "data";
+        public const string DataDirectory = "../../../data";
         public const string RawDataDirectory = "raw";
         public const string ParsedDataDirectory = "parsed";
 

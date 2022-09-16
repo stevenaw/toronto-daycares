@@ -19,7 +19,7 @@ namespace TorontoDaycares
             CityWardRepo = cityWardRepo;
         }
 
-        private static async Task<IEnumerable<Uri>> GetInvalidUrls()
+        private static async Task<IEnumerable<Uri>> GetInvalidUrls(CancellationToken cancellationToken)
         {
             var dataDir = Directory.CreateDirectory(Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory));
             var invalidFile = Path.Join(dataDir.FullName, FileResources.InvalidUrlsFile);
@@ -28,16 +28,9 @@ namespace TorontoDaycares
                 return Array.Empty<Uri>();
 
             var uris = new List<Uri>();
-            await using (var stream = File.OpenRead(invalidFile))
-            {
-                using var reader = new StreamReader(stream);
-                while (!reader.EndOfStream)
-                {
-                    var line = await reader.ReadLineAsync();
-                    if (!string.IsNullOrWhiteSpace(line))
-                        uris.Add(new Uri(line));
-                }
-            }
+            await foreach (var line in File.ReadLinesAsync(invalidFile, cancellationToken))
+                if (!string.IsNullOrWhiteSpace(line))
+                    uris.Add(new Uri(line));
 
             return uris;
         }
@@ -45,7 +38,7 @@ namespace TorontoDaycares
         public async Task<IEnumerable<Daycare>> GetDaycares(DaycareSearchOptions options, CancellationToken cancellationToken = default)
         {
             var urls = await DaycareRepo.GetDaycareUrls(cancellationToken);
-            var invalidUrls = await GetInvalidUrls();
+            var invalidUrls = await GetInvalidUrls(cancellationToken);
 
             var dataFile = Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory, "daycares.json");
 
