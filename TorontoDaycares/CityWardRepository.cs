@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
+﻿using System.Globalization;
 using CsvHelper;
 using CsvHelper.Configuration;
 using TorontoDaycares.Models;
@@ -33,7 +32,7 @@ namespace TorontoDaycares
             {
                 if (!File.Exists(CacheFileLocation))
                 {
-                    var response = await Client.GetAsync("https://ckan0.cf.opendata.inter.prod-toronto.ca/download_resource/7672dac5-b383-4d7c-90ec-291dc69d37bf?format=csv&projection=4326");
+                    var response = await Client.GetAsync("https://ckan0.cf.opendata.inter.prod-toronto.ca/dataset/5e7a8234-f805-43ac-820f-03d7c360b588/resource/12a877e3-82ce-4334-ae1d-1c1f0ea3823f/download/City%20Wards%20Data%20-%204326.csv");
 
                     response.EnsureSuccessStatusCode();
 

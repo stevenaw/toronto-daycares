@@ -92,10 +92,8 @@ namespace TorontoDaycares
             {
                 if (File.Exists(CacheFileLocation))
                 {
-                    await using (var s = File.OpenRead(CacheFileLocation))
-                    {
-                        Cache = await JsonSerializer.DeserializeAsync<Dictionary<string, Coordinates>>(s);
-                    }
+                    await using var s = File.OpenRead(CacheFileLocation);
+                    Cache = await JsonSerializer.DeserializeAsync<Dictionary<string, Coordinates>>(s);
                 }
                 else
                 {
@@ -106,10 +104,8 @@ namespace TorontoDaycares
 
         private async Task PersistCache()
         {
-            await using (var s = File.OpenWrite(CacheFileLocation))
-            {
-                await JsonSerializer.SerializeAsync(s, Cache);
-            }
+            await using var s = File.OpenWrite(CacheFileLocation);
+            await JsonSerializer.SerializeAsync(s, Cache);
         }
 
         private class OpenStreetMapResponse

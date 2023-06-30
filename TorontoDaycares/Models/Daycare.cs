@@ -1,4 +1,6 @@
-﻿namespace TorontoDaycares.Models
+﻿using System.Text.Json.Serialization;
+
+namespace TorontoDaycares.Models
 {
     public class Daycare
     {
@@ -16,5 +18,10 @@
         public Coordinates GpsCoordinates { get; set; }
 
         public List<DaycareProgram> Programs { get; set; }
+    }
+
+    [JsonSerializable(typeof(Daycare[]))]
+    internal partial class DaycareJsonContext : JsonSerializerContext
+    {
     }
 }

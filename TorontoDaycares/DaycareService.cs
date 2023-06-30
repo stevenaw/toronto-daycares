@@ -46,7 +46,8 @@ namespace TorontoDaycares
             if (File.Exists(dataFile))
             {
                 await using var fs = File.OpenRead(dataFile);
-                var items = JsonSerializer.DeserializeAsyncEnumerable<Daycare>(fs, cancellationToken: cancellationToken);
+
+                var items = JsonSerializer.DeserializeAsyncEnumerable(fs, DaycareJsonContext.Default.Daycare, cancellationToken: cancellationToken);
 
                 await foreach (var item in items)
                     daycares.Add(item!.Uri, item);
@@ -72,7 +73,7 @@ namespace TorontoDaycares
             if (newDaycares > 0)
             {
                 await using var fs = File.OpenWrite(dataFile);
-                await JsonSerializer.SerializeAsync(fs, daycares.Values, cancellationToken: cancellationToken);
+                await JsonSerializer.SerializeAsync(fs, daycares.Values.ToArray(), DaycareJsonContext.Default.DaycareArray, cancellationToken: cancellationToken);
             }
 
             return daycares.Values;
@@ -83,18 +84,18 @@ namespace TorontoDaycares
             Daycare? daycare = null;
             var fileNameBase = Path.GetFileNameWithoutExtension(url.ToString());
 
-            var dataFile = Path.Join(ParsedDir.FullName, fileNameBase + ".json");
+            var dataFile = Path.Join(ParsedDir.FullName, $"{fileNameBase}.json");
             if (File.Exists(dataFile))
             {
                 await using var s = File.OpenRead(dataFile);
-                daycare = await JsonSerializer.DeserializeAsync<Daycare>(s, cancellationToken: cancellationToken);
+                daycare = await JsonSerializer.DeserializeAsync(s, DaycareJsonContext.Default.Daycare, cancellationToken: cancellationToken);
             }
 
             if (daycare is null)
             {
                 daycare = await DaycareRepo.GetDaycare(url, fileNameBase, cancellationToken);
 
-                if (daycare.Programs.Any())
+                if (daycare.Programs.Count != 0)
                 {
                     if (daycare.GpsCoordinates is null && options.HasFlag(DaycareSearchOptions.IncludeGps))
                     {
@@ -113,7 +114,7 @@ namespace TorontoDaycares
                     }
 
                     using var s = File.OpenWrite(dataFile);
-                    await JsonSerializer.SerializeAsync(s, daycare, cancellationToken: cancellationToken);
+                    await JsonSerializer.SerializeAsync(s, daycare, DaycareJsonContext.Default.Daycare, cancellationToken: cancellationToken);
                 }
                 else
                 {
