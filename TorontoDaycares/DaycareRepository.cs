@@ -18,7 +18,7 @@ namespace TorontoDaycares
         public async Task<Daycare> GetDaycare(Uri url, string id, CancellationToken cancellationToken)
         {
             HtmlDocument html;
-            var rawFile = Path.Join(HtmlCacheDirectory.FullName, id + ".html");
+            var rawFile = Path.Join(HtmlCacheDirectory.FullName, $"{id}.html");
 
             if (!File.Exists(rawFile))
             {

@@ -6,7 +6,7 @@ namespace TorontoDaycares
     public class Options
     {
         [Option('n', "topN", Required = false, Default = 50)]
-        public int? TopN { get; set; }
+        public int TopN { get; set; }
 
         [Option('w', "wards", Required = false, Separator = ',')]
         public IEnumerable<int> WardList { get; set; }

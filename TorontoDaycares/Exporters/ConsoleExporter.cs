@@ -10,7 +10,7 @@ namespace TorontoDaycares.Exporters
         {
             foreach (var programType in items)
             {
-                var title = $"Top {filter.TopN.Value} {programType.Key} programs:";
+                var title = $"Top {filter.TopN} {programType.Key} programs:";
                 Console.WriteLine(title);
                 Console.WriteLine(new string('-', title.Length));
 
