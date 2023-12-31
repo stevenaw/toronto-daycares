@@ -109,12 +109,10 @@ namespace TorontoDaycares
                     {
                         var result = vals
                                     .OrderByDescending(val => val.Program.Rating)
-                                    .Select(val => val);
+                                    .Take(filter.TopN)
+                                    .ToList();
 
-                        if (filter.TopN.HasValue)
-                            result = result.Take(filter.TopN.Value);
-
-                        return result.ToList();
+                        return result;
                     }
                 );
 
