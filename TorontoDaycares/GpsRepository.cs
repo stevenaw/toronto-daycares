@@ -8,7 +8,7 @@ namespace TorontoDaycares
     public class GpsRepository
     {
         private HttpClient Client { get; }
-        private Dictionary<string, Coordinates>? Cache { get; set; }
+        private Dictionary<string, Coordinates> Cache { get; set; } = [];
         private string CacheFileLocation { get; }
 
         private DateTime lastCall = DateTime.MinValue;
@@ -83,21 +83,17 @@ namespace TorontoDaycares
 
             lastCall = DateTime.Now;
 
-            return await Client.GetFromJsonAsync<OpenStreetMapResponse[]>(url, cancellationToken);
+            return (await Client.GetFromJsonAsync<OpenStreetMapResponse[]>(url, cancellationToken))!;
         }
 
         private async Task InitializeCache()
         {
-            if (Cache is null)
+            if (Cache is { Count: 0 })
             {
                 if (File.Exists(CacheFileLocation))
                 {
                     await using var s = File.OpenRead(CacheFileLocation);
                     Cache = await JsonSerializer.DeserializeAsync<Dictionary<string, Coordinates>>(s);
-                }
-                else
-                {
-                    Cache = new Dictionary<string, Coordinates>();
                 }
             }
         }
@@ -108,10 +104,6 @@ namespace TorontoDaycares
             await JsonSerializer.SerializeAsync(s, Cache);
         }
 
-        private class OpenStreetMapResponse
-        {
-            public string lat { get; set; }
-            public string lon { get; set; }
-        }
+        private record OpenStreetMapResponse(string lat, string lon);
     }
 }

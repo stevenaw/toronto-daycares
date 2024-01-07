@@ -40,12 +40,12 @@ namespace TorontoDaycares
             var dataDir = Directory.CreateDirectory(Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory));
             var dataFile = Path.Join(dataDir.FullName, FileResources.AllUrlsFile);
 
-            Uri[] uris = Array.Empty<Uri>();
+            Uri[] uris = [];
 
             if (File.Exists(dataFile))
                 uris = File.ReadLines(dataFile).Select(line => new Uri(line)).ToArray();
 
-            if (!uris.Any())
+            if (uris.Length == 0)
             {
                 var alphaPages = await GetAlphaUrls(cancellationToken);
                 uris = (await FetchDaycareUrls(alphaPages, cancellationToken)).ToArray();
@@ -58,7 +58,7 @@ namespace TorontoDaycares
 
         private async Task<IEnumerable<Uri>> FetchDaycareUrls(IEnumerable<Uri> pageUrls, CancellationToken cancellationToken)
         {
-            List<Uri> daycareUrls = new List<Uri>();
+            List<Uri> daycareUrls = [];
 
             foreach (var url in pageUrls)
             {
@@ -157,7 +157,7 @@ namespace TorontoDaycares
                 daycare.Uri = uri;
 
                 var programBox = infoBoxes[1];
-                daycare.Programs = new List<DaycareProgram>();
+                daycare.Programs = [];
 
                 var programTable = programBox.QuerySelector("table");
                 var programRows = programTable is null ? Array.Empty<HtmlNode>() : programTable.QuerySelectorAll("tbody tr");

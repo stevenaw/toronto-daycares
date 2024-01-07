@@ -42,7 +42,7 @@ namespace TorontoDaycares
 
             var dataFile = Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory, "daycares.json");
 
-            Dictionary<Uri, Daycare> daycares = new Dictionary<Uri, Daycare>();
+            Dictionary<Uri, Daycare> daycares = [];
             if (File.Exists(dataFile))
             {
                 await using var fs = File.OpenRead(dataFile);
