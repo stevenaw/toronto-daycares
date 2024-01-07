@@ -13,6 +13,8 @@ namespace TorontoDaycares
 
         private DateTime lastCall = DateTime.MinValue;
 
+        private static readonly TimeSpan DelayBetweenCalls = TimeSpan.FromSeconds(2);
+
         public GpsRepository(HttpClient client)
         {
             Client = client;
@@ -78,8 +80,8 @@ namespace TorontoDaycares
         {
             var now = DateTime.Now;
             var elapsedSinceLastCall = now - lastCall;
-            if (elapsedSinceLastCall.TotalSeconds < 2)
-                await Task.Delay(TimeSpan.FromSeconds(2) - elapsedSinceLastCall, cancellationToken);
+            if (elapsedSinceLastCall < DelayBetweenCalls)
+                await Task.Delay(DelayBetweenCalls - elapsedSinceLastCall, cancellationToken);
 
             lastCall = DateTime.Now;
 

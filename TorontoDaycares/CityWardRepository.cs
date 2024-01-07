@@ -43,11 +43,11 @@ namespace TorontoDaycares
 
                 await using var file = File.OpenRead(CacheFileLocation);
                 using var reader = new StreamReader(file);
+
                 var csvParser = new CsvReader(reader, CultureInfo.InvariantCulture);
-
-                var wards = new Dictionary<string, CityWard>();
-
                 csvParser.Context.RegisterClassMap<CityWardClassMap>();
+
+                var wards = new Dictionary<string, CityWard>(25);
                 await foreach (var ward in csvParser.GetRecordsAsync<CityWard>())
                     wards.Add(ward.Name, ward);
 
