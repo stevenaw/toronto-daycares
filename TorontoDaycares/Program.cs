@@ -6,6 +6,12 @@ using TorontoDaycares.Models;
 
 namespace TorontoDaycares
 {
+    /*
+     * TODO: Use OpenData dataset instead of page scraping
+     * https://open.toronto.ca/dataset/licensed-child-care-centres/
+     * CSV + WGS84
+     * https://ckan0.cf.opendata.inter.prod-toronto.ca/dataset/059d37c6-d88b-42fb-b230-ec6a5ec74c24/resource/74eb5418-42c8-49d3-a62f-69941f0161f3/download/Child%20care%20centres%20-%204326.csv
+     */
     class Program
     {
         const int MaxDrivingDistanceKm = 15;
