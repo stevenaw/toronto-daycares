@@ -7,14 +7,22 @@ namespace TorontoDaycares
 {
     public class CityWardRepository
     {
+        private const string CityWardDataset = "https://ckan0.cf.opendata.inter.prod-toronto.ca/dataset/5e7a8234-f805-43ac-820f-03d7c360b588/resource/12a877e3-82ce-4334-ae1d-1c1f0ea3823f/download/City%20Wards%20Data%20-%204326.csv";
+
         private HttpClient Client { get; }
         private string CacheFileLocation { get; }
-        private Dictionary<string, CityWard> Wards { get; set; } = [];
+        private Dictionary<string, CityWard> WardsByName { get; set; } = [];
+        private CityWard[] Wards { get; set; } = [];
 
         public CityWardRepository(HttpClient client)
         {
             Client = client;
             CacheFileLocation = Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory, "City Wards Data.csv");
+        }
+        public CityWardRepository(HttpClient client, string cacheFileLocation)
+        {
+            Client = client;
+            CacheFileLocation = cacheFileLocation;
         }
 
         public class CityWardClassMap : ClassMap<CityWard>
@@ -28,11 +36,11 @@ namespace TorontoDaycares
 
         private async Task InitializeCache()
         {
-            if (Wards is { Count: 0 })
+            if (WardsByName is { Count: 0 })
             {
                 if (!File.Exists(CacheFileLocation))
                 {
-                    var response = await Client.GetAsync("https://ckan0.cf.opendata.inter.prod-toronto.ca/dataset/5e7a8234-f805-43ac-820f-03d7c360b588/resource/12a877e3-82ce-4334-ae1d-1c1f0ea3823f/download/City%20Wards%20Data%20-%204326.csv");
+                    var response = await Client.GetAsync(CityWardDataset);
 
                     response.EnsureSuccessStatusCode();
 
@@ -48,21 +56,34 @@ namespace TorontoDaycares
                 csvParser.Context.RegisterClassMap<CityWardClassMap>();
 
                 var wards = new Dictionary<string, CityWard>(25);
-                await foreach (var ward in csvParser.GetRecordsAsync<CityWard>())
-                    wards.Add(ward.Name, ward);
+                var allWards = new CityWard[25];
 
-                Wards = wards;
+                await foreach (var ward in csvParser.GetRecordsAsync<CityWard>())
+                {
+                    allWards[ward.Number-1] = ward;
+                    wards.Add(ward.Name, ward);
+                }
+
+                WardsByName = wards;
+                Wards = allWards;
             }
         }
 
-        internal async Task<CityWard?> GetWardByNameAsync(string wardName)
+        public async Task<CityWard?> GetWardByNameAsync(string wardName)
         {
             await InitializeCache();
 
-            if (Wards.TryGetValue(wardName, out var ward))
+            if (WardsByName.TryGetValue(wardName, out var ward))
                 return ward;
 
             return default;
+        }
+
+        public async Task<CityWard[]> GetWardsAsync()
+        {
+            await InitializeCache();
+
+            return Wards;
         }
     }
 }
