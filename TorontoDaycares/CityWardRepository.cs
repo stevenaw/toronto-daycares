@@ -10,7 +10,7 @@ namespace TorontoDaycares
         private const string CityWardDataset = "https://ckan0.cf.opendata.inter.prod-toronto.ca/dataset/5e7a8234-f805-43ac-820f-03d7c360b588/resource/12a877e3-82ce-4334-ae1d-1c1f0ea3823f/download/City%20Wards%20Data%20-%204326.csv";
 
         private HttpClient Client { get; }
-        private string CacheFileLocation { get; }
+        public string CacheFileLocation { get; init; }
         private Dictionary<string, CityWard> WardsByName { get; set; } = [];
         private CityWard[] Wards { get; set; } = [];
 
@@ -19,13 +19,8 @@ namespace TorontoDaycares
             Client = client;
             CacheFileLocation = Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory, "City Wards Data.csv");
         }
-        public CityWardRepository(HttpClient client, string cacheFileLocation)
-        {
-            Client = client;
-            CacheFileLocation = cacheFileLocation;
-        }
 
-        public class CityWardClassMap : ClassMap<CityWard>
+        private class CityWardClassMap : ClassMap<CityWard>
         {
             public CityWardClassMap()
             {

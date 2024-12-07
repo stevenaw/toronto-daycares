@@ -10,7 +10,10 @@ namespace TorontoDaycares.Tests
             using var mockClient = new HttpClient(new NullHttpClientHandler());
             var cacheFileLocation = Path.Join(Directory.GetCurrentDirectory(), "Data", "City Wards Data - 4326.csv");
 
-            var repo = new CityWardRepository(mockClient, cacheFileLocation);
+            var repo = new CityWardRepository(mockClient)
+            {
+                CacheFileLocation = cacheFileLocation
+            };
 
             var wards = await repo.GetWardsAsync();
 
@@ -29,7 +32,10 @@ namespace TorontoDaycares.Tests
             using var mockClient = new HttpClient(new NullHttpClientHandler());
             var cacheFileLocation = Path.Join(Directory.GetCurrentDirectory(), "Data", "City Wards Data - 4326.csv");
 
-            var repo = new CityWardRepository(mockClient, cacheFileLocation);
+            var repo = new CityWardRepository(mockClient)
+            {
+                CacheFileLocation = cacheFileLocation
+            };
 
             var wards1 = await repo.GetWardsAsync();
             var wards2 = await repo.GetWardsAsync();
@@ -47,7 +53,10 @@ namespace TorontoDaycares.Tests
 
             try
             {
-                var repo = new CityWardRepository(mockClient, cacheFileLocation);
+                var repo = new CityWardRepository(mockClient)
+                {
+                    CacheFileLocation = cacheFileLocation
+                };
 
                 _ = await repo.GetWardsAsync();
 
