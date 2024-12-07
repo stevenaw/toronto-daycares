@@ -7,7 +7,10 @@ namespace TorontoDaycares.Tests
         [Test]
         public async Task GetWardsAsync_ReturnsAll()
         {
-            var repo = GetRepository();
+            using var mockClient = new HttpClient(new NullHttpClientHandler());
+            var cacheFileLocation = Path.Join(Directory.GetCurrentDirectory(), "Data", "City Wards Data - 4326.csv");
+
+            var repo = new CityWardRepository(mockClient, cacheFileLocation);
 
             var wards = await repo.GetWardsAsync();
 
@@ -23,7 +26,10 @@ namespace TorontoDaycares.Tests
         [Test]
         public async Task GetWardsAsync_CachesResults()
         {
-            var repo = GetRepository();
+            using var mockClient = new HttpClient(new NullHttpClientHandler());
+            var cacheFileLocation = Path.Join(Directory.GetCurrentDirectory(), "Data", "City Wards Data - 4326.csv");
+
+            var repo = new CityWardRepository(mockClient, cacheFileLocation);
 
             var wards1 = await repo.GetWardsAsync();
             var wards2 = await repo.GetWardsAsync();
@@ -31,25 +37,48 @@ namespace TorontoDaycares.Tests
             Assert.That(wards1, Is.SameAs(wards2));
         }
 
-        private static CityWardRepository GetRepository()
+        [Test]
+        public async Task GetWardsAsync_FetchesWhenNotCached()
         {
-            using var mockClient = new HttpClient(new ThrowingHttpClientHandler());
-            var cacheFileLocation = Path.Join(Directory.GetCurrentDirectory(), "Data", "City Wards Data - 4326.csv");
+            var handler = new NullHttpClientHandler();
+            var mockClient = new HttpClient(handler);
 
-            var repo = new CityWardRepository(mockClient, cacheFileLocation);
+            var cacheFileLocation = Path.Join(Path.GetTempPath(), $"{Guid.NewGuid()}.csv");
 
-            return repo;
+            try
+            {
+                var repo = new CityWardRepository(mockClient, cacheFileLocation);
+
+                _ = await repo.GetWardsAsync();
+
+                Assert.That(handler.Requests, Has.Count.EqualTo(1));
+                Assert.That(handler.Requests[0].Method, Is.EqualTo(HttpMethod.Get));
+                Assert.That(handler.Requests[0].RequestUri?.ToString(), Does.StartWith("https://ckan0.cf.opendata.inter.prod-toronto.ca"));
+
+            }
+            finally
+            {
+                File.Delete(cacheFileLocation);
+            }
         }
 
-        public class ThrowingHttpClientHandler : HttpClientHandler
+        internal class NullHttpClientHandler : HttpClientHandler
         {
+            public List<HttpRequestMessage> Requests { get; set; } = new List<HttpRequestMessage>();
+
             protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             {
-                throw new NotImplementedException();
+                return Task.FromResult(Send(request, cancellationToken));
             }
+
             protected override HttpResponseMessage Send(HttpRequestMessage request, CancellationToken cancellationToken)
             {
-                throw new NotImplementedException();
+                Requests.Add(request);
+
+                return new HttpResponseMessage()
+                {
+                    StatusCode = System.Net.HttpStatusCode.OK
+                };
             }
         }
     }
