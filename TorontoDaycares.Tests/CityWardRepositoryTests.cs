@@ -73,7 +73,7 @@ namespace TorontoDaycares.Tests
 
         internal class NullHttpClientHandler : HttpClientHandler
         {
-            public List<HttpRequestMessage> Requests { get; set; } = new List<HttpRequestMessage>();
+            public List<HttpRequestMessage> Requests { get; set; } = [];
 
             protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             {

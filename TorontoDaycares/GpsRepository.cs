@@ -16,9 +16,14 @@ namespace TorontoDaycares
         private static readonly TimeSpan DelayBetweenCalls = TimeSpan.FromSeconds(2);
 
         public GpsRepository(HttpClient client)
+            : this(client, Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory, "gps.json"))
+        {
+        }
+
+        public GpsRepository(HttpClient client, string cacheFileLocation)
         {
             Client = client;
-            CacheFileLocation = Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory, "gps.json");
+            CacheFileLocation = cacheFileLocation;
         }
 
         public static void ConfigureClient(HttpClient client)
