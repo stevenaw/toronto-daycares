@@ -17,6 +17,7 @@ namespace TorontoDaycares.Tests
             Assert.That(client.BaseAddress, Is.EqualTo(new Uri("https://nominatim.openstreetmap.org")));
             Assert.That(client.DefaultRequestHeaders.Host, Is.EqualTo("nominatim.openstreetmap.org"));
             Assert.That(client.DefaultRequestHeaders.Contains("User-Agent"), Is.True);
+            
             var ua = string.Join(";", client.DefaultRequestHeaders.GetValues("User-Agent"));
             Assert.That(ua, Does.Contain("Firefox").Or.Contain("Mozilla"));
         }
@@ -28,7 +29,10 @@ namespace TorontoDaycares.Tests
             using var client = new HttpClient(handler);
 
             using var cacheFile = new TempFile("json");
-            var repo = new GpsRepository(client, cacheFile);
+            var repo = new GpsRepository(client)
+            {
+                CacheFileLocation = cacheFile
+            };
 
             // create a temp cache file with a mapping as JSON
             var address = "1 Test St";
@@ -62,7 +66,10 @@ namespace TorontoDaycares.Tests
             GpsRepository.ConfigureClient(client);
 
             using var cacheFile = new TempFile("json");
-            var repo = new GpsRepository(client, cacheFile);
+            var repo = new GpsRepository(client)
+            {
+                CacheFileLocation = cacheFile
+            };
 
             var coords = await repo.GetCoordinates(address);
 
@@ -116,7 +123,10 @@ namespace TorontoDaycares.Tests
             GpsRepository.ConfigureClient(client);
 
             using var cacheFile = new TempFile("json");
-            var repo = new GpsRepository(client, cacheFile);
+            var repo = new GpsRepository(client)
+            {
+                CacheFileLocation = cacheFile
+            };
 
             var coords = await repo.GetCoordinates(address);
 
@@ -128,34 +138,6 @@ namespace TorontoDaycares.Tests
             Assert.That(handler.Requests, Has.Count.EqualTo(2));
             Assert.That(handler.Requests[0].RequestUri?.Query, Does.Contain("street="));
             Assert.That(handler.Requests[1].RequestUri?.Query, Does.Contain("q="));
-        }
-
-        // Helper handler that records requests and uses a responder func
-        private class TestHandler : HttpMessageHandler
-        {
-            private readonly Func<HttpRequestMessage, HttpResponseMessage> _responder;
-            public List<HttpRequestMessage> Requests { get; } = [];
-
-            public TestHandler(Func<HttpRequestMessage, HttpResponseMessage> responder)
-            {
-                _responder = responder;
-            }
-
-            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-            {
-                Requests.Add(request);
-                return Task.FromResult(_responder(request));
-            }
-        }
-
-        // Handler that fails if any HTTP call is made
-        private class ThrowIfCalledHandler : HttpMessageHandler
-        {
-            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-            {
-                Assert.Fail("HttpClient should not be called when cache file exists");
-                throw new InvalidOperationException();
-            }
         }
     }
 }

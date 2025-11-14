@@ -9,21 +9,16 @@ namespace TorontoDaycares
     {
         private HttpClient Client { get; }
         private Dictionary<string, Coordinates> Cache { get; set; } = [];
-        private string CacheFileLocation { get; }
+        public string CacheFileLocation { get; init; }
 
         private DateTime lastCall = DateTime.MinValue;
 
         private static readonly TimeSpan DelayBetweenCalls = TimeSpan.FromSeconds(2);
 
         public GpsRepository(HttpClient client)
-            : this(client, Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory, "gps.json"))
-        {
-        }
-
-        public GpsRepository(HttpClient client, string cacheFileLocation)
         {
             Client = client;
-            CacheFileLocation = cacheFileLocation;
+            CacheFileLocation = Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory, "gps.json");
         }
 
         public static void ConfigureClient(HttpClient client)

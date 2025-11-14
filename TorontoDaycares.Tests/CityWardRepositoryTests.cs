@@ -49,46 +49,17 @@ namespace TorontoDaycares.Tests
             var handler = new NullHttpClientHandler();
             var mockClient = new HttpClient(handler);
 
-            var cacheFileLocation = Path.Join(Path.GetTempPath(), $"{Guid.NewGuid()}.csv");
-
-            try
+            var cacheFileLocation = new TempFile("csv");
+            var repo = new CityWardRepository(mockClient)
             {
-                var repo = new CityWardRepository(mockClient)
-                {
-                    CacheFileLocation = cacheFileLocation
-                };
+                CacheFileLocation = cacheFileLocation
+            };
 
-                _ = await repo.GetWardsAsync();
+            _ = await repo.GetWardsAsync();
 
-                Assert.That(handler.Requests, Has.Count.EqualTo(1));
-                Assert.That(handler.Requests[0].Method, Is.EqualTo(HttpMethod.Get));
-                Assert.That(handler.Requests[0].RequestUri?.ToString(), Does.StartWith("https://ckan0.cf.opendata.inter.prod-toronto.ca"));
-
-            }
-            finally
-            {
-                File.Delete(cacheFileLocation);
-            }
-        }
-
-        internal class NullHttpClientHandler : HttpClientHandler
-        {
-            public List<HttpRequestMessage> Requests { get; set; } = [];
-
-            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-            {
-                return Task.FromResult(Send(request, cancellationToken));
-            }
-
-            protected override HttpResponseMessage Send(HttpRequestMessage request, CancellationToken cancellationToken)
-            {
-                Requests.Add(request);
-
-                return new HttpResponseMessage()
-                {
-                    StatusCode = System.Net.HttpStatusCode.OK
-                };
-            }
+            Assert.That(handler.Requests, Has.Count.EqualTo(1));
+            Assert.That(handler.Requests[0].Method, Is.EqualTo(HttpMethod.Get));
+            Assert.That(handler.Requests[0].RequestUri?.ToString(), Does.StartWith("https://ckan0.cf.opendata.inter.prod-toronto.ca"));
         }
     }
 }

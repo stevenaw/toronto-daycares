@@ -7,7 +7,7 @@ namespace TorontoDaycares
     public class DaycareRepository
     {
         private HttpClient Client { get; }
-        private DirectoryInfo HtmlCacheDirectory { get; }
+        public DirectoryInfo HtmlCacheDirectory { get; init; }
 
         public DaycareRepository(HttpClient client)
         {
