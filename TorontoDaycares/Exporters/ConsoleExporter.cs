@@ -1,13 +1,12 @@
-﻿using TorontoDaycares.Models;
-
-namespace TorontoDaycares.Exporters
+﻿namespace TorontoDaycares.Exporters
 {
     public class ConsoleExporter : IExporter
     {
         // TODO: Async
-
-        public Task ExportAsync(Options filter, Dictionary<ProgramType, List<(Daycare Daycare, DaycareProgram Program)>> items)
+        public Task ExportAsync(Options filter, Models.DaycareSearchResponse response)
         {
+            var items = response.TopPrograms.GroupBy(x => x.Program.ProgramType).ToDictionary(g => g.Key, g => g.Select(x => (x.Daycare, x.Program)).ToList());
+
             foreach (var programType in items)
             {
                 var title = $"Top {filter.TopN} {programType.Key} programs:";

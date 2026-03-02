@@ -36,4 +36,14 @@
     <PackageReference Include="ModelContextProtocol" Version="1.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Reference the main TorontoDaycares project so server tools can use the services and models -->
+    <ProjectReference Include="..\TorontoDaycares\TorontoDaycares.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Provide AddHttpClient extension methods -->
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
+  </ItemGroup>
+
 </Project>

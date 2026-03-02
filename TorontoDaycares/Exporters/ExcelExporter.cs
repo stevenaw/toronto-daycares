@@ -1,5 +1,4 @@
 ﻿using OfficeOpenXml;
-using TorontoDaycares.Models;
 
 namespace TorontoDaycares.Exporters
 {
@@ -17,9 +16,11 @@ namespace TorontoDaycares.Exporters
             FileName = fileName;
         }
 
-        public async Task ExportAsync(Options filter, Dictionary<ProgramType, List<(Daycare Daycare, DaycareProgram Program)>> items)
+        public async Task ExportAsync(Options filter, Models.DaycareSearchResponse response)
         {
             using var package = new ExcelPackage();
+
+            var items = response.TopPrograms.GroupBy(x => x.Program.ProgramType).ToDictionary(g => g.Key, g => g.Select(x => (x.Daycare, x.Program)).ToList());
 
             foreach (var programType in items)
             {

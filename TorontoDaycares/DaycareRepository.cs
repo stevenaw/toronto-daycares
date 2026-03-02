@@ -155,9 +155,13 @@ namespace TorontoDaycares
                     daycare.WardName = ward.ToString();
 
                 daycare.Uri = uri;
-
-                var programBox = infoBoxes[1];
                 daycare.Programs = [];
+
+                var programBox = infoBoxes.QuerySelectorAll("header").FirstOrDefault(h => h.InnerText.Contains("Program Offerings"))?.ParentNode;
+                if (programBox is null)
+                {
+                    programBox = infoBoxes.QuerySelectorAll("h2").FirstOrDefault(h => h.InnerText.Contains("Programs"))?.ParentNode;
+                }
 
                 var programTable = programBox.QuerySelector("table");
                 var programRows = programTable is null ? Array.Empty<HtmlNode>() : programTable.QuerySelectorAll("tbody tr");

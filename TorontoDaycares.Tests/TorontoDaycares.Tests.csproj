@@ -5,10 +5,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Data\City Wards Data - 4326.csv" />
+    <Content Include="TestData\*.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Data\City Wards Data - 4326.csv" />
     <Content Include="Data\City Wards Data - 4326.csv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -23,6 +26,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="NUnit3TestAdapter" Version="5.2.0" />
+    <PackageReference Include="ProjectFiles" Version="1.0.0" />
     <PackageReference Include="Verify" Version="31.7.1" />
   </ItemGroup>
 

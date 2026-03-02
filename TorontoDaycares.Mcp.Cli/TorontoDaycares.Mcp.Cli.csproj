@@ -11,4 +11,9 @@
     <PackageReference Include="ModelContextProtocol" Version="1.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Reference the main TorontoDaycares project to reuse models for CLI formatting -->
+    <ProjectReference Include="..\TorontoDaycares\TorontoDaycares.csproj" />
+  </ItemGroup>
+
 </Project>

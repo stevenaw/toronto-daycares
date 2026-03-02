@@ -17,6 +17,9 @@ namespace TorontoDaycares.Models
 
         public Coordinates GpsCoordinates { get; set; }
 
+        // Calculated distance (km) from a requested 'near' address. Filled only when a proximity search is requested.
+        public double? DistanceKm { get; set; }
+
         public List<DaycareProgram> Programs { get; set; }
     }
 

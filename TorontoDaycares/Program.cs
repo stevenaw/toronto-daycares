@@ -14,8 +14,6 @@ namespace TorontoDaycares
      */
     class Program
     {
-        const int MaxDrivingDistanceKm = 15;
-
         static async Task Main(string[] args)
         {
             var result = Parser.Default.ParseArguments<Options>(args);
@@ -28,23 +26,20 @@ namespace TorontoDaycares
 
                 Directory.CreateDirectory(Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory));
 
-                if (!string.IsNullOrEmpty(options.Address))
+                var req = new Models.DaycareSearchRequest()
                 {
-                    var gpsRepo = services.GetRequiredService<GpsRepository>();
-                    options.AddressCoordinates = await gpsRepo.GetCoordinates(options.Address);
-                }
-
-                var searchOptions = DaycareSearchOptions.None;
-                if (options.AddressCoordinates is not null)
-                    searchOptions |= DaycareSearchOptions.IncludeGps;
+                    TopN = options.TopN,
+                    Wards = options.WardList?.ToArray(),
+                    Programs = options.ProgramList?.ToArray(),
+                    NearAddress = options.Address,
+                    Options = DaycareSearchOptions.None
+                };
 
                 var service = services.GetRequiredService<DaycareService>();
-
-                var daycares = await service.GetDaycares(searchOptions);
-                var topPrograms = FindData(daycares, options);
+                var response = await service.SearchDaycares(req);
 
                 var exporter = services.GetRequiredService<IExporter>();
-                await exporter.ExportAsync(options, topPrograms);
+                await exporter.ExportAsync(options, response);
             });
         }
 
@@ -81,72 +76,6 @@ namespace TorontoDaycares
                }).UseConsoleLifetime();
 
             return builder.Build();
-        }
-
-        private static Dictionary<ProgramType, List<(Daycare Daycare, DaycareProgram Program)>> FindData(IEnumerable<Daycare> daycares, Options filter)
-        {
-            var allPrograms = daycares
-                .SelectMany(o =>
-                {
-                    var result = o.Programs
-                        .Where(o2 => o2.Rating.HasValue)
-                        .Select(p => (Daycare: o, Program: p));
-
-                    if (filter.WardList.Any())
-                        result = result.Where(o2 => filter.WardList.Contains(o2.Daycare.WardNumber));
-                    if (filter.ProgramList.Any())
-                        result = result.Where(o2 => filter.ProgramList.Contains(o2.Program.ProgramType));
-
-                    if (filter.AddressCoordinates is not null)
-                        result = result.Where(o2 =>
-                            o2.Daycare.GpsCoordinates is not null &&
-                            GreatCircleDistance(o2.Daycare.GpsCoordinates, filter.AddressCoordinates) < MaxDrivingDistanceKm
-                        );
-
-                    return result;
-                })
-                .ToArray();
-
-            var topPrograms = allPrograms
-                .GroupBy(o => o.Program.ProgramType)
-                .ToDictionary(
-                    o => o.Key,
-                    vals =>
-                    {
-                        var result = vals
-                                    .OrderByDescending(val => val.Program.Rating)
-                                    .Take(filter.TopN)
-                                    .ToList();
-
-                        return result;
-                    }
-                );
-
-            return topPrograms;
-        }
-
-        private static double GreatCircleDistance(Coordinates a, Coordinates b)
-        {
-            const double EarthRadius = 6371; // Radius of the Earth in km.
-
-            var lat1 = DegreesToRadians(a.Latitute);
-            var lon1 = DegreesToRadians(a.Longitude);
-            var lat2 = DegreesToRadians(b.Latitute);
-            var lon2 = DegreesToRadians(b.Longitude);
-
-            var diffLat = lat2 - lat1;
-            var diffLon = lon2 - lon1;
-
-            double h = Math.Sin(diffLat / 2) * Math.Sin(diffLat / 2) +
-                Math.Cos(lat1) * Math.Cos(lat2) *
-                Math.Sin(diffLon / 2) * Math.Sin(diffLon / 2);
-
-            return 2 * EarthRadius * Math.Asin(Math.Sqrt(h));
-
-            static double DegreesToRadians(double degrees)
-            {
-                return degrees * Math.PI / 180.0;
-            }
         }
     }
 }

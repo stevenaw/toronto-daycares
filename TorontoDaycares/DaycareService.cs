@@ -5,6 +5,8 @@ namespace TorontoDaycares
 {
     public class DaycareService
     {
+        const int MaxDrivingDistanceKm = 15;
+
         private GpsRepository GpsRepo { get; }
         private DaycareRepository DaycareRepo { get; }
         private CityWardRepository CityWardRepo { get; }
@@ -17,6 +19,87 @@ namespace TorontoDaycares
             DaycareRepo = daycareRepo;
             GpsRepo = gpsRepo;
             CityWardRepo = cityWardRepo;
+        }
+
+        private static double GreatCircleDistance(Coordinates a, Coordinates b)
+        {
+            const double EarthRadius = 6371; // Radius of the Earth in km.
+
+            var lat1 = DegreesToRadians(a.Latitute);
+            var lon1 = DegreesToRadians(a.Longitude);
+            var lat2 = DegreesToRadians(b.Latitute);
+            var lon2 = DegreesToRadians(b.Longitude);
+
+            var diffLat = lat2 - lat1;
+            var diffLon = lon2 - lon1;
+
+            double h = Math.Sin(diffLat / 2) * Math.Sin(diffLat / 2) +
+                Math.Cos(lat1) * Math.Cos(lat2) *
+                Math.Sin(diffLon / 2) * Math.Sin(diffLon / 2);
+
+            return 2 * EarthRadius * Math.Asin(Math.Sqrt(h));
+
+            static double DegreesToRadians(double degrees)
+            {
+                return degrees * Math.PI / 180.0;
+            }
+        }
+
+        public async Task<Models.DaycareSearchResponse> SearchDaycares(Models.DaycareSearchRequest request, CancellationToken cancellationToken = default)
+        {
+            var topN = request?.TopN ?? 50;
+
+            DaycareSearchOptions options = request?.Options ?? DaycareSearchOptions.None;
+
+            // If proximity requested, ensure GPS info is included when retrieving daycares
+            Coordinates? addressCoordinates = null;
+            if (!string.IsNullOrWhiteSpace(request?.NearAddress))
+            {
+                options |= DaycareSearchOptions.IncludeGps;
+                addressCoordinates = await GpsRepo.GetCoordinates(request!.NearAddress!, cancellationToken);
+            }
+
+            var daycares = (await GetDaycares(options, cancellationToken)).ToList();
+
+            // Apply ward filter
+            if (request?.Wards != null && request.Wards.Any())
+                daycares = daycares.Where(d => request.Wards.Contains(d.WardNumber)).ToList();
+
+            // If proximity was requested, compute distances and filter out daycares beyond MaxDrivingDistanceKm
+            if (addressCoordinates is not null)
+            {
+                // Compute distance for each daycare (only if GPS available)
+                daycares = daycares.Select(d =>
+                {
+                    if (d.GpsCoordinates is null)
+                    {
+                        d.DistanceKm = null;
+                    }
+                    else
+                    {
+                        d.DistanceKm = GreatCircleDistance(d.GpsCoordinates, addressCoordinates);
+                    }
+                    return d;
+                }).ToList();
+
+                // Keep only daycares within MaxDrivingDistanceKm
+                daycares = daycares.Where(d => d.DistanceKm.HasValue && d.DistanceKm.Value <= MaxDrivingDistanceKm).ToList();
+            }
+
+            // Build a ranked list of individual programs (exclude programs with missing ratings)
+            var programEntries = daycares
+                .SelectMany(d => d.Programs ?? Enumerable.Empty<DaycareProgram>(), (d, p) => new { Daycare = d, Program = p })
+                // Exclude programs without ratings
+                .Where(x => x.Program.Rating.HasValue)
+                // If a program filter was provided in the request, apply it here
+                .Where(x => request?.Programs == null || request.Programs.Length == 0 || request.Programs.Contains(x.Program.ProgramType))
+                // Order by rating descending
+                .OrderByDescending(x => x.Program.Rating!.Value)
+                .Take(topN)
+                .Select(x => new Models.TopProgramResult { Daycare = x.Daycare, Program = x.Program })
+                .ToList();
+
+            return new Models.DaycareSearchResponse { TopPrograms = programEntries };
         }
 
         private static async Task<IEnumerable<Uri>> GetInvalidUrls(CancellationToken cancellationToken)
