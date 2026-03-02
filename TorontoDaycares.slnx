@@ -6,6 +6,10 @@
     <File Path="LICENSE" />
     <File Path="README.md" />
   </Folder>
+  <Project Path="TorontoDaycares.Mcp.Cli/TorontoDaycares.Mcp.Cli.csproj" Id="5c9bb1e9-bc56-40dd-9d9a-63b0a867c06b">
+    <BuildDependency Project="TorontoDaycares.Mcp.Server/TorontoDaycares.Mcp.Server.csproj" />
+  </Project>
+  <Project Path="TorontoDaycares.Mcp.Server/TorontoDaycares.Mcp.Server.csproj" Id="24153612-1a50-4720-bbe9-b33fb5354c2a" />
   <Project Path="TorontoDaycares.Tests/TorontoDaycares.Tests.csproj" />
   <Project Path="TorontoDaycares/TorontoDaycares.csproj" />
 </Solution>

@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "MCP",
+    "Projects": [
+      {
+        "Path": "TorontoDaycares.Mcp\\TorontoDaycares.Mcp.Server.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "TorontoDaycares.Mcp.Client\\TorontoDaycares.Mcp.Cli.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]
