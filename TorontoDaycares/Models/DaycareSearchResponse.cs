@@ -2,6 +2,7 @@
 {
     public class DaycareSearchResponse
     {
+        public int TopN { get; set; }
         public List<TopProgramResult> TopPrograms { get; set; } = new List<TopProgramResult>();
     }
 

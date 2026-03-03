@@ -99,7 +99,7 @@ namespace TorontoDaycares
                 .Select(x => new Models.TopProgramResult { Daycare = x.Daycare, Program = x.Program })
                 .ToList();
 
-            return new Models.DaycareSearchResponse { TopPrograms = programEntries };
+            return new Models.DaycareSearchResponse { TopN = topN, TopPrograms = programEntries };
         }
 
         private static async Task<IEnumerable<Uri>> GetInvalidUrls(CancellationToken cancellationToken)

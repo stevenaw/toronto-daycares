@@ -24,7 +24,7 @@ namespace TorontoDaycares
                 using var serviceScope = host.Services.CreateScope();
                 var services = serviceScope.ServiceProvider;
 
-                Directory.CreateDirectory(Path.Join(Directory.GetCurrentDirectory(), FileResources.DataDirectory));
+                Directory.CreateDirectory(Path.Join(Directory.GetCurrentDirectory(), TorontoDaycares.FileResources.DataDirectory));
 
                 var req = new Models.DaycareSearchRequest()
                 {
@@ -39,7 +39,7 @@ namespace TorontoDaycares
                 var response = await service.SearchDaycares(req);
 
                 var exporter = services.GetRequiredService<IExporter>();
-                await exporter.ExportAsync(options, response);
+                await exporter.ExportAsync(response);
             });
         }
 

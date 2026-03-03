@@ -16,7 +16,7 @@ namespace TorontoDaycares.Exporters
             FileName = fileName;
         }
 
-        public async Task ExportAsync(Options filter, Models.DaycareSearchResponse response)
+        public async Task ExportAsync(Models.DaycareSearchResponse response)
         {
             using var package = new ExcelPackage();
 

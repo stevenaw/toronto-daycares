@@ -2,6 +2,6 @@
 {
     public interface IExporter
     {
-        Task ExportAsync(Options filter, Models.DaycareSearchResponse response);
+        Task ExportAsync(Models.DaycareSearchResponse response);
     }
 }

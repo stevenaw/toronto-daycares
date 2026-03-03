@@ -3,13 +3,13 @@
     public class ConsoleExporter : IExporter
     {
         // TODO: Async
-        public Task ExportAsync(Options filter, Models.DaycareSearchResponse response)
+        public Task ExportAsync(Models.DaycareSearchResponse response)
         {
             var items = response.TopPrograms.GroupBy(x => x.Program.ProgramType).ToDictionary(g => g.Key, g => g.Select(x => (x.Daycare, x.Program)).ToList());
 
             foreach (var programType in items)
             {
-                var title = $"Top {filter.TopN} {programType.Key} programs:";
+                var title = $"Top {response.TopN} {programType.Key} programs:";
                 Console.WriteLine(title);
                 Console.WriteLine(new string('-', title.Length));
 
