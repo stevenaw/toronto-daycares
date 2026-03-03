@@ -1,5 +1,4 @@
-﻿
-namespace TorontoDaycares.Tests
+﻿namespace TorontoDaycares.Tests
 {
     [TestFixture]
     public class CityWardRepositoryTests

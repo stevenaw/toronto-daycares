@@ -23,26 +23,6 @@
         }
     }
 
-    //internal class NullHttpClientHandler : HttpClientHandler
-    //{
-    //    public List<HttpRequestMessage> Requests { get; set; } = [];
-
-    //    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-    //    {
-    //        return Task.FromResult(Send(request, cancellationToken));
-    //    }
-
-    //    protected override HttpResponseMessage Send(HttpRequestMessage request, CancellationToken cancellationToken)
-    //    {
-    //        Requests.Add(request);
-
-    //        return new HttpResponseMessage()
-    //        {
-    //            StatusCode = System.Net.HttpStatusCode.OK
-    //        };
-    //    }
-    //}
-
     internal class ThrowIfCalledHandler : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
