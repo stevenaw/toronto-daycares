@@ -1,4 +1,4 @@
-﻿using OfficeOpenXml;
+﻿using ClosedXML.Excel;
 
 namespace TorontoDaycares.Exporters
 {
@@ -6,51 +6,53 @@ namespace TorontoDaycares.Exporters
     {
         private string FileName { get; } = fileName;
 
-        static ExcelExporter()
-        {
-            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-        }
-
         public async Task ExportAsync(Models.DaycareSearchResponse response)
         {
-            using var package = new ExcelPackage();
+            if (!Directory.Exists(Path.GetDirectoryName(FileName)))
+            {
+                throw new DirectoryNotFoundException($"Directory not found: {Path.GetDirectoryName(FileName)}");
+            }
 
-            var items = response.TopPrograms.GroupBy(x => x.Program.ProgramType).ToDictionary(g => g.Key, g => g.Select(x => (x.Daycare, x.Program)).ToList());
+            var items = response.TopPrograms
+                .GroupBy(x => x.Program.ProgramType)
+                .ToDictionary(g => g.Key, g => g.Select(x => (x.Daycare, x.Program)).ToList());
 
             if (items.Count == 0)
             {
                 throw new InvalidOperationException("No programs to export.");
             }
 
+            using var workbook = new XLWorkbook();
+
             foreach (var programType in items)
             {
-                var worksheet = package.Workbook.Worksheets.Add(programType.Key.ToString());
+                var worksheet = workbook.Worksheets.Add(programType.Key.ToString());
 
                 worksheet.Row(1).Style.Font.Bold = true;
-                worksheet.Cells[1, 1].Value = "Name";
-                worksheet.Cells[1, 2].Value = "Rating";
-                worksheet.Cells[1, 3].Value = "Capacity";
-                worksheet.Cells[1, 4].Value = "Vacancy";
-                worksheet.Cells[1, 5].Value = "Address";
-                worksheet.Cells[1, 6].Value = "Url";
+                worksheet.Cell(1, 1).Value = "Name";
+                worksheet.Cell(1, 2).Value = "Rating";
+                worksheet.Cell(1, 3).Value = "Capacity";
+                worksheet.Cell(1, 4).Value = "Vacancy";
+                worksheet.Cell(1, 5).Value = "Address";
+                worksheet.Cell(1, 6).Value = "Url";
 
                 var row = 2;
                 foreach (var item in programType.Value)
                 {
-                    worksheet.Cells[row, 1].Value = item.Daycare.Name;
-                    worksheet.Cells[row, 2].Value = item.Program.Rating.Value;
-                    worksheet.Cells[row, 3].Value = item.Program.Capacity;
-                    worksheet.Cells[row, 4].Value = item.Program.Vacancy;
-                    worksheet.Cells[row, 5].Value = item.Daycare.Address;
-                    worksheet.Cells[row, 6].Hyperlink = item.Daycare.Uri;
+                    worksheet.Cell(row, 1).Value = item.Daycare.Name;
+                    worksheet.Cell(row, 2).Value = item.Program.Rating.Value;
+                    worksheet.Cell(row, 3).Value = item.Program.Capacity;
+                    if (item.Program.Vacancy.HasValue)
+                        worksheet.Cell(row, 4).Value = item.Program.Vacancy.Value;
+                    worksheet.Cell(row, 5).Value = item.Daycare.Address;
+                    worksheet.Cell(row, 6).SetHyperlink(new XLHyperlink(item.Daycare.Uri));
                     row++;
                 }
 
-                worksheet.Cells.AutoFitColumns(0);
+                worksheet.Columns().AdjustToContents();
             }
 
-            await using var file = File.OpenWrite(FileName);
-            await package.SaveAsAsync(file);
+            await Task.Run(() => workbook.SaveAs(FileName));
         }
     }
 }

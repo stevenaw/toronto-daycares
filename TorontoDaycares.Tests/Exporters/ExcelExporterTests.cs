@@ -1,4 +1,4 @@
-﻿using OfficeOpenXml;
+﻿using ClosedXML.Excel;
 using TorontoDaycares.Exporters;
 using TorontoDaycares.Models;
 
@@ -87,23 +87,23 @@ namespace TorontoDaycares.Tests.Exporters
 
             // Assert
             Assert.That(File.Exists(filePath), Is.True);
-            using var package = new ExcelPackage(new FileInfo(filePath));
-            var worksheet = package.Workbook.Worksheets[0];
+            using var workbook = new XLWorkbook(filePath);
+            var worksheet = workbook.Worksheet(1);
 
             Assert.That(worksheet.Name, Is.EqualTo("Infant"));
-            Assert.That(worksheet.Cells[1, 1].Value, Is.EqualTo("Name"));
-            Assert.That(worksheet.Cells[1, 2].Value, Is.EqualTo("Rating"));
-            Assert.That(worksheet.Cells[1, 3].Value, Is.EqualTo("Capacity"));
-            Assert.That(worksheet.Cells[1, 4].Value, Is.EqualTo("Vacancy"));
-            Assert.That(worksheet.Cells[1, 5].Value, Is.EqualTo("Address"));
-            Assert.That(worksheet.Cells[1, 6].Value, Is.EqualTo("Url"));
+            Assert.That(worksheet.Cell(1, 1).GetValue<string>(), Is.EqualTo("Name"));
+            Assert.That(worksheet.Cell(1, 2).GetValue<string>(), Is.EqualTo("Rating"));
+            Assert.That(worksheet.Cell(1, 3).GetValue<string>(), Is.EqualTo("Capacity"));
+            Assert.That(worksheet.Cell(1, 4).GetValue<string>(), Is.EqualTo("Vacancy"));
+            Assert.That(worksheet.Cell(1, 5).GetValue<string>(), Is.EqualTo("Address"));
+            Assert.That(worksheet.Cell(1, 6).GetValue<string>(), Is.EqualTo("Url"));
 
-            Assert.That(worksheet.Cells[2, 1].Value, Is.EqualTo("Test Daycare"));
-            Assert.That(worksheet.Cells[2, 2].Value, Is.EqualTo(4.5));
-            Assert.That(worksheet.Cells[2, 3].Value, Is.EqualTo(10));
-            Assert.That(worksheet.Cells[2, 4].Value, Is.True);
-            Assert.That(worksheet.Cells[2, 5].Value, Is.EqualTo("123 Test St"));
-            Assert.That(worksheet.Cells[2, 6].Hyperlink?.ToString(), Is.EqualTo("https://example.com/daycare/1"));
+            Assert.That(worksheet.Cell(2, 1).GetValue<string>(), Is.EqualTo("Test Daycare"));
+            Assert.That(worksheet.Cell(2, 2).GetValue<double>(), Is.EqualTo(4.5));
+            Assert.That(worksheet.Cell(2, 3).GetValue<double>(), Is.EqualTo(10));
+            Assert.That(worksheet.Cell(2, 4).GetValue<bool>(), Is.True);
+            Assert.That(worksheet.Cell(2, 5).GetValue<string>(), Is.EqualTo("123 Test St"));
+            Assert.That(worksheet.Cell(2, 6).GetHyperlink().ExternalAddress?.ToString(), Is.EqualTo("https://example.com/daycare/1"));
         }
 
         /// <summary>
@@ -182,10 +182,10 @@ namespace TorontoDaycares.Tests.Exporters
 
             // Assert
             Assert.That(File.Exists(filePath), Is.True);
-            using var package = new ExcelPackage(new FileInfo(filePath));
-            Assert.That(package.Workbook.Worksheets, Has.Count.EqualTo(3));
+            using var workbook = new XLWorkbook(filePath);
+            Assert.That(workbook.Worksheets.Count(), Is.EqualTo(3));
 
-            var worksheetNames = package.Workbook.Worksheets.Select(w => w.Name).ToList();
+            var worksheetNames = workbook.Worksheets.Select(w => w.Name).ToList();
             Assert.That(worksheetNames, Does.Contain("Infant"));
             Assert.That(worksheetNames, Does.Contain("Toddler"));
             Assert.That(worksheetNames, Does.Contain("Preschool"));
@@ -267,13 +267,13 @@ namespace TorontoDaycares.Tests.Exporters
 
             // Assert
             Assert.That(File.Exists(filePath), Is.True);
-            using var package = new ExcelPackage(new FileInfo(filePath));
-            var worksheet = package.Workbook.Worksheets[0];
+            using var workbook = new XLWorkbook(filePath);
+            var worksheet = workbook.Worksheet(1);
 
             Assert.That(worksheet.Name, Is.EqualTo("Infant"));
-            Assert.That(worksheet.Cells[2, 1].Value, Is.EqualTo("First Infant"));
-            Assert.That(worksheet.Cells[3, 1].Value, Is.EqualTo("Second Infant"));
-            Assert.That(worksheet.Cells[4, 1].Value, Is.EqualTo("Third Infant"));
+            Assert.That(worksheet.Cell(2, 1).GetValue<string>(), Is.EqualTo("First Infant"));
+            Assert.That(worksheet.Cell(3, 1).GetValue<string>(), Is.EqualTo("Second Infant"));
+            Assert.That(worksheet.Cell(4, 1).GetValue<string>(), Is.EqualTo("Third Infant"));
         }
 
         /// <summary>
@@ -360,9 +360,9 @@ namespace TorontoDaycares.Tests.Exporters
 
             // Assert
             Assert.That(File.Exists(filePath), Is.True);
-            using var package = new ExcelPackage(new FileInfo(filePath));
-            var worksheet = package.Workbook.Worksheets[0];
-            Assert.That(worksheet.Cells[2, 4].Value, Is.Null);
+            using var workbook = new XLWorkbook(filePath);
+            var worksheet = workbook.Worksheet(1);
+            Assert.That(worksheet.Cell(2, 4).IsEmpty(), Is.True);
         }
 
         /// <summary>
@@ -407,10 +407,10 @@ namespace TorontoDaycares.Tests.Exporters
 
             // Assert
             Assert.That(File.Exists(filePath), Is.True);
-            using var package = new ExcelPackage(new FileInfo(filePath));
-            var worksheet = package.Workbook.Worksheets[0];
-            Assert.That(worksheet.Cells[2, 1].Value, Is.EqualTo("Test's \"Daycare\" & Care <Center>"));
-            Assert.That(worksheet.Cells[2, 5].Value, Is.EqualTo("123 Test St, Apt #5-B (Rear), Toronto, ON"));
+            using var workbook = new XLWorkbook(filePath);
+            var worksheet = workbook.Worksheet(1);
+            Assert.That(worksheet.Cell(2, 1).GetValue<string>(), Is.EqualTo("Test's \"Daycare\" & Care <Center>"));
+            Assert.That(worksheet.Cell(2, 5).GetValue<string>(), Is.EqualTo("123 Test St, Apt #5-B (Rear), Toronto, ON"));
         }
 
         /// <summary>
@@ -457,10 +457,10 @@ namespace TorontoDaycares.Tests.Exporters
 
             // Assert
             Assert.That(File.Exists(filePath), Is.True);
-            using var package = new ExcelPackage(new FileInfo(filePath));
-            var worksheet = package.Workbook.Worksheets[0];
-            Assert.That(worksheet.Cells[2, 1].Value, Is.EqualTo(longName));
-            Assert.That(worksheet.Cells[2, 5].Value, Is.EqualTo(longAddress));
+            using var workbook = new XLWorkbook(filePath);
+            var worksheet = workbook.Worksheet(1);
+            Assert.That(worksheet.Cell(2, 1).GetValue<string>(), Is.EqualTo(longName));
+            Assert.That(worksheet.Cell(2, 5).GetValue<string>(), Is.EqualTo(longAddress));
         }
 
         /// <summary>
@@ -505,10 +505,10 @@ namespace TorontoDaycares.Tests.Exporters
 
             // Assert
             Assert.That(File.Exists(filePath), Is.True);
-            using var package = new ExcelPackage(new FileInfo(filePath));
-            var worksheet = package.Workbook.Worksheets[0];
-            Assert.That(worksheet.Cells[2, 1].Value, Is.EqualTo(string.Empty));
-            Assert.That(worksheet.Cells[2, 5].Value, Is.EqualTo(string.Empty));
+            using var workbook = new XLWorkbook(filePath);
+            var worksheet = workbook.Worksheet(1);
+            Assert.That(worksheet.Cell(2, 1).GetValue<string>(), Is.EqualTo(string.Empty));
+            Assert.That(worksheet.Cell(2, 5).GetValue<string>(), Is.EqualTo(string.Empty));
         }
 
         /// <summary>
@@ -553,9 +553,9 @@ namespace TorontoDaycares.Tests.Exporters
 
             // Assert
             Assert.That(File.Exists(filePath), Is.True);
-            using var package = new ExcelPackage(new FileInfo(filePath));
-            var worksheet = package.Workbook.Worksheets[0];
-            Assert.That(worksheet.Cells[2, 3].Value, Is.Zero);
+            using var workbook = new XLWorkbook(filePath);
+            var worksheet = workbook.Worksheet(1);
+            Assert.That(worksheet.Cell(2, 3).GetValue<double>(), Is.Zero);
         }
 
         /// <summary>
@@ -600,9 +600,9 @@ namespace TorontoDaycares.Tests.Exporters
 
             // Assert
             Assert.That(File.Exists(filePath), Is.True);
-            using var package = new ExcelPackage(new FileInfo(filePath));
-            var worksheet = package.Workbook.Worksheets[0];
-            Assert.That(worksheet.Cells[2, 3].Value, Is.EqualTo(int.MaxValue));
+            using var workbook = new XLWorkbook(filePath);
+            var worksheet = workbook.Worksheet(1);
+            Assert.That(worksheet.Cell(2, 3).GetValue<double>(), Is.EqualTo(int.MaxValue));
         }
 
         /// <summary>
@@ -698,10 +698,10 @@ namespace TorontoDaycares.Tests.Exporters
 
             // Assert
             Assert.That(File.Exists(filePath), Is.True);
-            using var package = new ExcelPackage(new FileInfo(filePath));
-            Assert.That(package.Workbook.Worksheets, Has.Count.EqualTo(4));
+            using var workbook = new XLWorkbook(filePath);
+            Assert.That(workbook.Worksheets.Count(), Is.EqualTo(4));
 
-            var worksheetNames = package.Workbook.Worksheets.Select(w => w.Name).ToList();
+            var worksheetNames = workbook.Worksheets.Select(w => w.Name).ToList();
             Assert.That(worksheetNames, Does.Contain("Infant"));
             Assert.That(worksheetNames, Does.Contain("Toddler"));
             Assert.That(worksheetNames, Does.Contain("Preschool"));
@@ -750,8 +750,8 @@ namespace TorontoDaycares.Tests.Exporters
 
             // Assert
             Assert.That(File.Exists(filePath), Is.True);
-            using var package = new ExcelPackage(new FileInfo(filePath));
-            var worksheet = package.Workbook.Worksheets[0];
+            using var workbook = new XLWorkbook(filePath);
+            var worksheet = workbook.Worksheet(1);
             Assert.That(worksheet.Row(1).Style.Font.Bold, Is.True);
         }
 

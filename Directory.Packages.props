@@ -6,7 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="CsvHelper" Version="33.0.1" />
-    <PackageVersion Include="EPPlus" Version="7.0.5" />
+    <PackageVersion Include="ClosedXML" Version="0.105.0" />
     <PackageVersion Include="HtmlAgilityPack" Version="1.12.4" />
     <PackageVersion Include="HtmlAgilityPack.CssSelectors.NetCore" Version="1.2.1" />
     <PackageVersion Include="CommandLineParser" Version="2.9.1" />

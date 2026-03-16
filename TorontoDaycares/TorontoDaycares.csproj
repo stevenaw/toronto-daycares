@@ -2,7 +2,7 @@
 
   <ItemGroup>
     <PackageReference Include="CsvHelper" />
-    <PackageReference Include="EPPlus" />
+    <PackageReference Include="ClosedXML" />
     <PackageReference Include="HtmlAgilityPack" />
     <PackageReference Include="HtmlAgilityPack.CssSelectors.NetCore" />
   </ItemGroup>
