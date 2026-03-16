@@ -4,7 +4,7 @@ using Microsoft.Extensions.Hosting;
 using TorontoDaycares.Exporters;
 using TorontoDaycares.Models;
 
-namespace TorontoDaycares
+namespace TorontoDaycares.Cli
 {
     /*
      * TODO: Use OpenData dataset instead of page scraping

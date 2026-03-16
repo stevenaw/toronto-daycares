@@ -2,18 +2,13 @@
 
 namespace TorontoDaycares.Exporters
 {
-    public class ExcelExporter : IExporter
+    public record class ExcelExporter(string fileName) : IExporter
     {
-        private string FileName { get; }
+        private string FileName { get; } = fileName;
 
         static ExcelExporter()
         {
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-        }
-
-        public ExcelExporter(string fileName)
-        {
-            FileName = fileName;
         }
 
         public async Task ExportAsync(Models.DaycareSearchResponse response)
@@ -21,6 +16,11 @@ namespace TorontoDaycares.Exporters
             using var package = new ExcelPackage();
 
             var items = response.TopPrograms.GroupBy(x => x.Program.ProgramType).ToDictionary(g => g.Key, g => g.Select(x => (x.Daycare, x.Program)).ToList());
+
+            if (items.Count == 0)
+            {
+                throw new InvalidOperationException("No programs to export.");
+            }
 
             foreach (var programType in items)
             {
