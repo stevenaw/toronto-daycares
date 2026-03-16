@@ -88,11 +88,10 @@ namespace TorontoDaycares
 
         private async Task<HtmlDocument> FetchHtml(Uri url, CancellationToken cancellationToken)
         {
-            var response = await Client.GetAsync(url, cancellationToken);
-            var html = await response.Content.ReadAsStringAsync(cancellationToken);
+            await using var html = await Client.GetStreamAsync(url, cancellationToken);
 
             var page = new HtmlDocument();
-            page.LoadHtml(html);
+            page.Load(html);
 
             return page;
         }

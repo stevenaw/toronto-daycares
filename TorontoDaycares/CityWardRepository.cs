@@ -35,11 +35,7 @@ namespace TorontoDaycares
             {
                 if (!File.Exists(CacheFileLocation))
                 {
-                    var response = await Client.GetAsync(CityWardDataset);
-
-                    response.EnsureSuccessStatusCode();
-
-                    await using var result = await response.Content.ReadAsStreamAsync();
+                    await using var result = await Client.GetStreamAsync(CityWardDataset);
                     await using var newFile = File.Create(CacheFileLocation);
                     await result.CopyToAsync(newFile);
                 }
