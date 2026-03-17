@@ -1,5 +1,5 @@
 # Toronto Daycares
-A rudimentary command line tool to help find high-rated nearby daycares in Toronto.
+A rudimentary command line tool and MCP server to help find high-rated nearby daycares in Toronto.
 Results will be grouped by child care program and ordered by ranking.
 
 ## Result Limiting
