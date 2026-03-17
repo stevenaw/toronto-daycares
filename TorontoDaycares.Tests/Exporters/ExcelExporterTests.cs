@@ -183,7 +183,7 @@ namespace TorontoDaycares.Tests.Exporters
             // Assert
             Assert.That(File.Exists(filePath), Is.True);
             using var workbook = new XLWorkbook(filePath);
-            Assert.That(workbook.Worksheets.Count(), Is.EqualTo(3));
+            Assert.That(workbook.Worksheets.Count, Is.EqualTo(3));
 
             var worksheetNames = workbook.Worksheets.Select(w => w.Name).ToList();
             Assert.That(worksheetNames, Does.Contain("Infant"));
@@ -699,7 +699,7 @@ namespace TorontoDaycares.Tests.Exporters
             // Assert
             Assert.That(File.Exists(filePath), Is.True);
             using var workbook = new XLWorkbook(filePath);
-            Assert.That(workbook.Worksheets.Count(), Is.EqualTo(4));
+            Assert.That(workbook.Worksheets.Count, Is.EqualTo(4));
 
             var worksheetNames = workbook.Worksheets.Select(w => w.Name).ToList();
             Assert.That(worksheetNames, Does.Contain("Infant"));
